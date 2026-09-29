@@ -3,1650 +3,1188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PAKJAI Homestay & Local Experience Booking System</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>PAKJAI Homestay - พักกาย พักใจ สัมผัสวิถีชุมชนทั่วไทย</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        // Attach pakjaiApp directly to window to guarantee availability
+        window.pakjaiApp = function pakjaiApp() {
+            return {
+                currentView: 'public', // 'public', 'activities', 'owner_dashboard', 'admin_dashboard'
+                
+                // Login User State
+                currentUser: {
+                    role: 'public', // 'public', 'owner', 'admin'
+                    name: 'ผู้เยี่ยมชมทั่วไป',
+                    username: ''
+                },
+
+                // Filters State
+                searchQuery: '',
+                searchCheckIn: '',
+                searchCheckOut: '',
+                selectedRegion: 'ทั้งหมด',
+                selectedProvince: 'ทั้งหมด',
+                sortBy: 'recommended',
+                activityViewProvince: 'เชียงใหม่',
+
+                // Modals Controls
+                showLoginModal: false,
+                showDetailModal: false,
+                showMyBookingsModal: false,
+                loginError: '',
+
+                loginForm: {
+                    username: '',
+                    password: ''
+                },
+
+                activeHomestay: null,
+                bookingForm: {
+                    checkIn: new Date().toISOString().split('T')[0],
+                    nights: 1,
+                    guests: 2
+                },
+
+                newReview: {
+                    rating: 5,
+                    comment: ''
+                },
+
+                userBookings: [],
+                toast: {
+                    show: false,
+                    message: ''
+                },
+
+                // Data Structures
+                regions: ['ภาคเหนือ', 'ภาคกลาง', 'ภาคตะวันออกเฉียงเหนือ', 'ภาคใต้', 'ภาคตะวันออก', 'ภาคตะวันตก'],
+                
+                popularProvinces: [
+                    { name: 'เชียงใหม่', icon: '🍓' },
+                    { name: 'สมุทรสงคราม', icon: '🛶' },
+                    { name: 'นครศรีธรรมราช', icon: '🎨' },
+                    { name: 'น่าน', icon: '🚴' },
+                    { name: 'ภูเก็ต', icon: '🏖️' },
+                    { name: 'กาญจนบุรี', icon: '🌊' }
+                ],
+
+                // Complete 77 Provinces Array
+                allProvincesList: [
+                    "กรุงเทพมหานคร", "กระบี่", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี", "ฉะเชิงเทรา", 
+                    "ชลบุรี", "ชัยนาท", "ชัยภูมิ", "ชุมพร", "เชียงราย", "เชียงใหม่", "ตรัง", "ตราด", "ตาก", "นครนายก", 
+                    "นครปฐม", "นครพนม", "นครราชสีมา", "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส", "น่าน", 
+                    "บึงกาฬ", "บุรีรัมย์", "ปทุมธานี", "ประจวบคีรีขันธ์", "ปราจีนบุรี", "ปัตตานี", "พระนครศรีอยุธยา", 
+                    "พะเยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "เพชรบุรี", "เพชรบูรณ์", "แพร่", "ภูเก็ต", 
+                    "มหาสารคาม", "มุกดาหาร", "แม่ฮ่องสอน", "ยโสธร", "ยะลา", "ร้อยเอ็ด", "ระนอง", "ระยอง", "ราชบุรี", 
+                    "ลพบุรี", "ลำปาง", "ลำพูน", "เลย", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สตูล", "สมุทรปราการ", 
+                    "สมุทรสงคราม", "สมุทรสาคร", "สระแก้ว", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "สุราษฎร์ธานี", 
+                    "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อ่างทอง", "อำนาจเจริญ", "อุดรธานี", "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี"
+                ],
+
+                homestays: [
+                    {
+                        id: 1,
+                        name: 'บ้านแม่กลางหลวง โฮมสเตย์',
+                        ownerUsername: 'owner_chiangmai',
+                        province: 'เชียงใหม่',
+                        region: 'ภาคเหนือ',
+                        district: 'จอมทอง',
+                        pricePerNight: 1200,
+                        rating: 4.9,
+                        reviewsCount: 38,
+                        image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=60',
+                        description: 'สัมผัสไอหมอกและนาขั้นบันไดอันเขียวขจี ชิมกาแฟสดต้มเองกลางสวน และร่วมกิจกรรมวิถีชาวดอย',
+                        activities: ['เก็บสตรอว์เบอร์รีสดจากไร่', 'ทานหมูกระทะบนดอยชมดาว', 'ดริปกาแฟสดปกาเกอะญอ'],
+                        status: 'approved',
+                        reviews: [
+                            { id: 101, userName: 'กิตติศักดิ์', rating: 5, comment: 'บรรยากาศดีมาก อากาศเย็นสบายตลอดปี หมูกระทะอร่อย!' }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        name: 'บ้านสวนอัมพวา ริมคลองโฮมสเตย์',
+                        ownerUsername: 'owner_samut',
+                        province: 'สมุทรสงคราม',
+                        region: 'ภาคกลาง',
+                        district: 'อัมพวา',
+                        pricePerNight: 950,
+                        rating: 4.8,
+                        reviewsCount: 24,
+                        image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&auto=format&fit=crop&q=60',
+                        description: 'โฮมสเตย์เรือนไทยริมน้ำ สัมผัสวิถีชีวิตชาวสวนมะพร้าว ล่องเรือชมหิ่งห้อยยามค่ำคืน',
+                        activities: ['พายเรือชมสวนมะพร้าว', 'ล่องเรือชมหิ่งห้อยยามค่ำ', 'ทำน้ำตาลมะพร้าวแบบดั้งเดิม'],
+                        status: 'approved',
+                        reviews: [
+                            { id: 102, userName: 'นภาวรรณ', rating: 5, comment: 'หิ่งห้อยเยอะมาก บ้านพักสะอาด เจ้าของดูแลเหมือนลูกหลาน' }
+                        ]
+                    },
+                    {
+                        id: 3,
+                        name: 'คีรีวง บ้านสวนหมอก โฮมสเตย์',
+                        ownerUsername: 'owner_nakhon',
+                        province: 'นครศรีธรรมราช',
+                        region: 'ภาคใต้',
+                        district: 'ลานสกา',
+                        pricePerNight: 850,
+                        rating: 4.9,
+                        reviewsCount: 42,
+                        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=60',
+                        description: 'พักผ่อนในหมู่บ้านที่อากาศดีที่สุดในประเทศไทย เล่นน้ำตกธรรมชาติ จิบกาแฟชิลๆ',
+                        activities: ['ทำผ้ามัดย้อมสีธรรมชาติ', 'ปั่นจักรยานชมสวนสมุนไพร', 'เล่นน้ำลำธารคีรีวง'],
+                        status: 'approved',
+                        reviews: []
+                    },
+                    {
+                        id: 4,
+                        name: 'ตูบนา โฮมสเตย์ น่าน',
+                        ownerUsername: 'owner_nan',
+                        province: 'น่าน',
+                        region: 'ภาคเหนือ',
+                        district: 'ปัว',
+                        pricePerNight: 1100,
+                        rating: 4.7,
+                        reviewsCount: 19,
+                        image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
+                        description: 'โฮมสเตย์กลางทุ่งนาและภูเขา นั่งมองดอยภูคา เรียนรู้วิถีชีวิตไทลื้อ',
+                        activities: ['ตักบาตรเช้าวิถีไทลื้อ', 'ขี่จักรยานชมทุ่งนาปัว', 'ทอผ้าพื้นเมืองน่าน'],
+                        status: 'approved',
+                        reviews: []
+                    },
+                    {
+                        id: 5,
+                        name: 'บ้านย่านเมืองเก่า ภูเก็ต โฮมสเตย์',
+                        ownerUsername: 'owner_phuket',
+                        province: 'ภูเก็ต',
+                        region: 'ภาคใต้',
+                        district: 'เมืองภูเก็ต',
+                        pricePerNight: 1500,
+                        rating: 4.8,
+                        reviewsCount: 31,
+                        image: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&auto=format&fit=crop&q=60',
+                        description: 'สถาปัตยกรรมชิโนโปตุกีส เรียนรู้วิถีบาบ๋า เพลิดเพลินกับอาหารพื้นเมืองและดำน้ำทะเลอันดามัน',
+                        activities: ['ทำอาหารพื้นเมืองภูเก็ต (หมูฮ้อง/โอต้าว)', 'ดำน้ำชมปะการังเกาะเฮ', 'เดินชมอาคารชิโนโปตุกีส'],
+                        status: 'approved',
+                        reviews: []
+                    }
+                ],
+
+                pendingApprovals: [],
+                ownerEditForms: {},
+
+                init() {
+                    this.homestays.forEach(hs => {
+                        this.ownerEditForms[hs.id] = {
+                            pricePerNight: hs.pricePerNight,
+                            province: hs.province,
+                            description: hs.description,
+                            activities: [...hs.activities],
+                            newActivityInput: ''
+                        };
+                    });
+                },
+
+                get filteredProvincesList() {
+                    if (this.selectedRegion === 'ทั้งหมด') {
+                        return this.allProvincesList;
+                    }
+                    return this.allProvincesList;
+                },
+
+                get displayedHomestays() {
+                    return this.homestays.filter(hs => {
+                        if (hs.status !== 'approved') return false;
+
+                        const matchSearch = this.searchQuery === '' || 
+                            hs.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                            hs.province.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                            hs.activities.some(a => a.toLowerCase().includes(this.searchQuery.toLowerCase()));
+
+                        const matchRegion = this.selectedRegion === 'ทั้งหมด' || hs.region === this.selectedRegion;
+                        const matchProvince = this.selectedProvince === 'ทั้งหมด' || hs.province === this.selectedProvince;
+
+                        return matchSearch && matchRegion && matchProvince;
+                    }).sort((a, b) => {
+                        if (this.sortBy === 'price_asc') return a.pricePerNight - b.pricePerNight;
+                        if (this.sortBy === 'price_desc') return b.pricePerNight - a.pricePerNight;
+                        if (this.sortBy === 'rating') return b.rating - a.rating;
+                        return b.id - a.id;
+                    });
+                },
+
+                filterByPopularProvince(pName) {
+                    this.selectedProvince = pName;
+                    this.currentView = 'public';
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.searchCheckIn = '';
+                    this.searchCheckOut = '';
+                    this.selectedRegion = 'ทั้งหมด';
+                    this.selectedProvince = 'ทั้งหมด';
+                },
+
+                openLoginModal() {
+                    this.loginError = '';
+                    this.showLoginModal = true;
+                },
+
+                handleLogin() {
+                    const u = this.loginForm.username.trim();
+                    const p = this.loginForm.password.trim();
+
+                    if (u === 'admin' && p === '1234') {
+                        this.currentUser = { role: 'admin', name: 'Super Admin', username: 'admin' };
+                        this.currentView = 'admin_dashboard';
+                        this.showLoginModal = false;
+                        this.showToast('เข้าสู่ระบบผู้ดูแลระบบสำเร็จ');
+                        return;
+                    }
+
+                    if (u.startsWith('owner_') && p === '1234') {
+                        this.currentUser = { 
+                            role: 'owner', 
+                            name: u.replace('owner_', '').toUpperCase() + ' Owner', 
+                            username: u 
+                        };
+                        this.currentView = 'owner_dashboard';
+                        this.showLoginModal = false;
+                        this.showToast('เข้าสู่ระบบเจ้าของโฮมสเตย์สำเร็จ');
+                        return;
+                    }
+
+                    this.loginError = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (ลองใช้ owner_chiangmai / 1234 หรือ admin / 1234)';
+                },
+
+                logout() {
+                    this.currentUser = { role: 'public', name: 'ผู้เยี่ยมชมทั่วไป', username: '' };
+                    this.currentView = 'public';
+                    this.showToast('ออกจากระบบเรียบร้อย');
+                },
+
+                getOwnerHomestays() {
+                    return this.homestays.filter(h => h.ownerUsername === this.currentUser.username || this.currentUser.username === 'owner_chiangmai');
+                },
+
+                getOwnerPendingCount() {
+                    return this.pendingApprovals.filter(a => a.submittedBy === this.currentUser.username).length;
+                },
+
+                addActivityToOwnerForm(homestayId) {
+                    const form = this.ownerEditForms[homestayId];
+                    if (form && form.newActivityInput.trim()) {
+                        form.activities.push(form.newActivityInput.trim());
+                        form.newActivityInput = '';
+                    }
+                },
+
+                removeActivityFromOwnerForm(homestayId, index) {
+                    const form = this.ownerEditForms[homestayId];
+                    if (form) {
+                        form.activities.splice(index, 1);
+                    }
+                },
+
+                submitOwnerChanges(homestayId) {
+                    const original = this.homestays.find(h => h.id === homestayId);
+                    const form = this.ownerEditForms[homestayId];
+
+                    if (!original || !form) return;
+
+                    const newReq = {
+                        id: Date.now(),
+                        homestayId: homestayId,
+                        homestayName: original.name,
+                        submittedBy: this.currentUser.username,
+                        timestamp: new Date().toLocaleString('th-TH'),
+                        originalData: {
+                            pricePerNight: original.pricePerNight,
+                            province: original.province,
+                            description: original.description,
+                            activities: [...original.activities]
+                        },
+                        newData: {
+                            pricePerNight: form.pricePerNight,
+                            province: form.province,
+                            description: form.description,
+                            activities: [...form.activities]
+                        }
+                    };
+
+                    this.pendingApprovals.push(newReq);
+                    original.status = 'pending';
+
+                    this.showToast('ส่งคำขอแก้ไขข้อมูลไปยัง Super Admin เรียบร้อย');
+                },
+
+                approveApproval(reqId) {
+                    const reqIdx = this.pendingApprovals.findIndex(r => r.id === reqId);
+                    if (reqIdx === -1) return;
+
+                    const req = this.pendingApprovals[reqIdx];
+                    const targetHomestay = this.homestays.find(h => h.id === req.homestayId);
+
+                    if (targetHomestay) {
+                        targetHomestay.pricePerNight = req.newData.pricePerNight;
+                        targetHomestay.province = req.newData.province;
+                        targetHomestay.description = req.newData.description;
+                        targetHomestay.activities = [...req.newData.activities];
+                        targetHomestay.status = 'approved';
+                    }
+
+                    this.pendingApprovals.splice(reqIdx, 1);
+                    this.showToast('อนุมัติการแก้ไขเรียบร้อยแล้ว ข้อมูลปรับเปลี่ยนบนหน้าเว็บจริงแล้ว');
+                },
+
+                rejectApproval(reqId) {
+                    const reqIdx = this.pendingApprovals.findIndex(r => r.id === reqId);
+                    if (reqIdx === -1) return;
+
+                    const req = this.pendingApprovals[reqIdx];
+                    const targetHomestay = this.homestays.find(h => h.id === req.homestayId);
+
+                    if (targetHomestay) {
+                        targetHomestay.status = 'approved';
+                    }
+
+                    this.pendingApprovals.splice(reqIdx, 1);
+                    this.showToast('ปฏิเสธคำขอการแก้ไขเรียบร้อยแล้ว');
+                },
+
+                getActivitiesForProvince(pName) {
+                    const hsInProv = this.homestays.filter(h => h.province === pName);
+                    if (hsInProv.length > 0) {
+                        const acts = [];
+                        hsInProv.forEach(h => {
+                            h.activities.forEach(a => acts.push({ name: a, desc: 'สัมผัสบรรยากาศท้องถิ่นที่ ' + h.name }));
+                        });
+                        return acts;
+                    }
+
+                    return [
+                        { name: 'ตักบาตรเช้าสัมผัสวิถีชุมชน', desc: 'ร่วมทำบุญตักบาตรยามเช้า ร่วมกับชาวบ้านในท้องถิ่น' },
+                        { name: 'ทำอาหารพื้นบ้านสไตล์ท้องถิ่น', desc: 'เรียนรู้สูตรอาหารดั้งเดิม ใชวัตถุดิบอินทรีย์จากสวน' },
+                        { name: 'ปั่นจักรยานชมธรรมชาติต้นไม้ใหญ่', desc: 'สัมผัสอากาศบริสุทธิ์และวิถีชีวิตดั้งเดิมรอบหมู่บ้าน' }
+                    ];
+                },
+
+                getHomestaysInProvince(pName) {
+                    return this.homestays.filter(h => h.province === pName && h.status === 'approved');
+                },
+
+                openHomestayDetail(hs) {
+                    this.activeHomestay = hs;
+                    this.showDetailModal = true;
+                },
+
+                processBooking() {
+                    if (!this.activeHomestay) return;
+
+                    const total = this.activeHomestay.pricePerNight * (this.bookingForm.nights || 1);
+                    this.userBookings.push({
+                        id: Date.now(),
+                        homestayName: this.activeHomestay.name,
+                        checkIn: this.bookingForm.checkIn,
+                        nights: this.bookingForm.nights,
+                        totalPrice: total,
+                        status: 'ยืนยันการจองแล้ว'
+                    });
+
+                    this.showDetailModal = false;
+                    this.showToast('ทำการจองโฮมสเตย์เรียบร้อยแล้ว!');
+                },
+
+                openMyBookingsModal() {
+                    this.showMyBookingsModal = true;
+                },
+
+                submitReview() {
+                    if (!this.activeHomestay || !this.newReview.comment.trim()) return;
+
+                    this.activeHomestay.reviews.unshift({
+                        id: Date.now(),
+                        userName: 'ผู้เข้าพัก',
+                        rating: this.newReview.rating,
+                        comment: this.newReview.comment
+                    });
+
+                    this.newReview.comment = '';
+                    this.showToast('ขอบคุณสำหรับรีวิวของคุณ!');
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3500);
+                }
+            };
+        };
+
+        // Register with Alpine explicitly
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pakjaiApp', window.pakjaiApp);
+        });
+    </script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        brand: {
+                        emerald: {
                             50: '#f0fdf4',
                             100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
                         },
-                        warm: {
-                            50: '#fffbeb',
-                            100: '#fef3c7',
+                        amber: {
                             500: '#f59e0b',
                             600: '#d97706',
                         }
                     },
                     fontFamily: {
-                        sans: ['Kanit', 'Prompt', 'sans-serif'],
+                        sans: ['Prompt', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome 6 Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Kanit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Alpine.js Core and Plugins -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <style>
-        body { font-family: 'Kanit', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
-<body class="h-full text-slate-800 antialiased" x-data="pakjaiApp()">
+<body class="h-full font-sans text-slate-800 flex flex-col antialiased selection:bg-emerald-500 selection:text-white" x-data="pakjaiApp">
 
-    <header class="bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-            <div class="flex items-center space-x-2 font-semibold">
-                <i class="fa-solid fa-house-chimney-window text-emerald-400 text-lg"></i>
-                <span class="tracking-wide">PAKJAI Homestay (พักใจ โฮมสเตย์ 77 จังหวัด)</span>
-                <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px] font-normal uppercase hidden sm:inline-block">3 Roles Control</span>
-            </div>
-
-            <!-- Role Switch & Profile Selector -->
-            <div class="flex items-center space-x-2 flex-wrap">
-                <!-- Host Profile Switcher (When Host role active) -->
-                <template x-if="currentRole === 'host'">
-                    <div class="flex items-center bg-slate-800 border border-emerald-500/40 rounded-full px-2 py-1 space-x-1">
-                        <i class="fa-solid fa-user-circle text-amber-400 text-xs"></i>
-                        <span class="text-[11px] text-slate-300 font-medium">สลับเจ้าของ:</span>
-                        <select x-model.number="currentHostId" @change="onHostProfileChange()" class="bg-slate-900 text-amber-300 text-xs font-bold rounded px-1.5 py-0.5 outline-none border border-slate-700">
-                            <template x-for="h in homestays" :key="h.id">
-                                <option :value="h.id" x-text="`${h.ownerName} (${h.title})`"></option>
-                            </template>
-                        </select>
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Brand Logo -->
+                <div class="flex items-center space-x-3 cursor-pointer" @click="currentView = 'public'; selectedProvince = 'ทั้งหมด'">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-emerald-600 to-teal-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 transform hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-house-chimney-window text-2xl"></i>
                     </div>
-                </template>
+                    <div>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-emerald-700 via-teal-600 to-emerald-500 bg-clip-text text-transparent">PAKJAI</span>
+                        <span class="text-xs block font-medium tracking-wider text-emerald-800 -mt-1">HOMESTAY THAILAND</span>
+                    </div>
+                </div>
 
-                <!-- Role Switcher Buttons -->
-                <div class="flex items-center bg-slate-950/80 rounded-full p-1 border border-slate-700">
-                    <button @click="switchRole('user')" :class="currentRole === 'user' ? 'bg-emerald-500 text-white font-semibold shadow' : 'text-slate-300 hover:text-white'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                        <i class="fa-solid fa-user"></i>
-                        <span class="hidden sm:inline">ผู้ใช้งาน</span>
+                <!-- Desktop Navigation Items -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <button @click="currentView = 'public'" :class="currentView === 'public' ? 'text-emerald-600 font-semibold border-b-2 border-emerald-600' : 'text-slate-600 hover:text-emerald-600'" class="py-2 transition-all">
+                        <i class="fa-solid fa-compass mr-1"></i> สำรวจโฮมสเตย์
                     </button>
+                    <button @click="currentView = 'activities'" :class="currentView === 'activities' ? 'text-emerald-600 font-semibold border-b-2 border-emerald-600' : 'text-slate-600 hover:text-emerald-600'" class="py-2 transition-all">
+                        <i class="fa-solid fa-mountain-sun mr-1"></i> กิจกรรมเด่น 77 จังหวัด
+                    </button>
+                    <button @click="openMyBookingsModal()" class="text-slate-600 hover:text-emerald-600 py-2 relative transition-all">
+                        <i class="fa-solid fa-calendar-check mr-1"></i> การจองของฉัน
+                        <span x-show="userBookings.length > 0" class="absolute -top-1 -right-2 bg-rose-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold" x-text="userBookings.length"></span>
+                    </button>
+                </nav>
 
-                    <button @click="switchRole('host')" :class="currentRole === 'host' ? 'bg-amber-500 text-slate-950 font-bold shadow' : 'text-slate-300 hover:text-white'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                        <i class="fa-solid fa-store"></i>
-                        <span>เจ้าของโฮมสเตย์</span>
-                    </button>
+                <!-- User Role / Portal Switcher -->
+                <div class="flex items-center space-x-3">
+                    <template x-if="currentUser.role === 'public'">
+                        <button @click="openLoginModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-sm">
+                            <i class="fa-solid fa-right-to-bracket mr-2"></i> เข้าสู่ระบบ (เจ้าของ/แอดมิน)
+                        </button>
+                    </template>
 
-                    <button @click="switchRole('admin')" :class="currentRole === 'admin' ? 'bg-purple-600 text-white font-semibold shadow' : 'text-slate-300 hover:text-white'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                        <i class="fa-solid fa-user-shield"></i>
-                        <span class="hidden sm:inline">ผู้ดูแลระบบ</span>
-                    </button>
+                    <template x-if="currentUser.role === 'owner'">
+                        <div class="flex items-center space-x-2">
+                            <div class="hidden sm:flex flex-col text-right">
+                                <span class="text-xs text-slate-500">เข้าสู่ระบบในฐานะ</span>
+                                <span class="text-sm font-semibold text-emerald-700" x-text="currentUser.name"></span>
+                            </div>
+                            <button @click="currentView = 'owner_dashboard'" class="px-3.5 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all flex items-center">
+                                <i class="fa-solid fa-store mr-1.5"></i> จัดการโฮมสเตย์
+                            </button>
+                            <button @click="logout()" class="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100" title="ออกจากระบบ">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template x-if="currentUser.role === 'admin'">
+                        <div class="flex items-center space-x-2">
+                            <div class="hidden sm:flex flex-col text-right">
+                                <span class="text-xs text-amber-600 font-bold">SUPER ADMIN</span>
+                                <span class="text-sm font-semibold text-slate-700">ผู้ดูแลระบบ</span>
+                            </div>
+                            <button @click="currentView = 'admin_dashboard'" class="px-3.5 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-md transition-all flex items-center relative">
+                                <i class="fa-solid fa-shield-halved mr-1.5"></i> ระบบอนุมัติ
+                                <span x-show="pendingApprovals.length > 0" class="ml-1.5 bg-rose-600 text-white rounded-full px-1.5 py-0.2 text-[10px]" x-text="pendingApprovals.length"></span>
+                            </button>
+                            <button @click="logout()" class="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100" title="ออกจากระบบ">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="min-h-[calc(100vh-48px)] flex flex-col">
-
-        <!-- ROLE 1: TOURIST / USER -->
-        <template x-if="currentRole === 'user'">
-            <div class="flex-1 flex flex-col items-center justify-start py-4 px-2 sm:px-4 bg-slate-100">
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        
+        <!-- ==================== VIEW 1: PUBLIC HOMESTAY EXPLORER ==================== -->
+        <div x-show="currentView === 'public'" class="space-y-8 pb-16">
+            
+            <!-- Hero Search Banner -->
+            <section class="relative bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 text-white py-16 px-4 sm:px-6 lg:px-8 overflow-hidden shadow-xl">
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
                 
-                <div class="w-full max-w-6xl bg-white rounded-2xl shadow-lg border border-slate-200 min-h-[85vh] flex flex-col overflow-hidden my-auto">
-                    
-                    <!-- USER APP HEADER -->
-                    <header class="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white px-5 py-4 shadow flex justify-between items-center shrink-0">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-white border border-white/30 shadow-inner">
-                                <i class="fa-solid fa-tree text-emerald-300 text-lg"></i>
+                <div class="relative max-w-5xl mx-auto text-center space-y-6">
+                    <span class="inline-block px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs sm:text-sm font-medium border border-emerald-400/30 backdrop-blur-sm">
+                        🌿 สัมผัสวิถีชีวิต ชิมอาหารท้องถิ่น เที่ยวไทยอย่างมีความหมาย
+                    </span>
+                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                        ค้นหาโฮมสเตย์ชุมชน <span class="text-amber-400 underline decoration-amber-400/50">ครบ 77 จังหวัด</span>
+                    </h1>
+                    <p class="text-slate-200 text-base sm:text-lg max-w-2xl mx-auto font-light">
+                        พักผ่อนหย่อนใจในบ้านสวน บนดอย ริมทะเล พร้อมร่วมกิจกรรมสัมผัสวัฒนธรรมประจำถิ่นทั่วประเทศไทย
+                    </p>
+
+                    <!-- Interactive Search & Filter Bar -->
+                    <div class="bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-2xl text-slate-800 max-w-4xl mx-auto border border-white/20">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-5 relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                                <input type="text" x-model="searchQuery" placeholder="ค้นชื่อโฮมสเตย์, กิจกรรม, หรือสถานที่..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                             </div>
-                            <div>
-                                <h1 class="font-bold text-base sm:text-lg leading-tight">พักใจ โฮมสเตย์ (PAKJAI Homestay)</h1>
-                                <p class="text-xs text-emerald-100 font-light">สัมผัสเสน่ห์วิถีชุมชน จองที่พักและกิจกรรม 77 จังหวัดทั่วไทย</p>
+
+                            <div class="md:col-span-3">
+                                <select x-model="selectedRegion" @change="selectedProvince = 'ทั้งหมด'" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-medium text-slate-700">
+                                    <option value="ทั้งหมด">🌐 ทุกภูมิภาค</option>
+                                    <template x-for="region in regions" :key="region">
+                                        <option :value="region" x-text="region"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-4">
+                                <select x-model="selectedProvince" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-medium text-slate-700">
+                                    <option value="ทั้งหมด">📍 ทั้งหมด 77 จังหวัด</option>
+                                    <template x-for="prov in filteredProvincesList" :key="prov">
+                                        <option :value="prov" x-text="prov"></option>
+                                    </template>
+                                </select>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
 
-                        <!-- Notification Bell with Counter -->
-                        <div class="relative">
-                            <button @click="userTab = 'notifications'" class="relative p-2.5 rounded-full hover:bg-white/10 transition">
-                                <i class="fa-solid fa-bell text-xl"></i>
-                                <template x-if="unreadNotificationsCount > 0">
-                                    <span class="absolute top-1 right-1 w-4 h-4 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center animate-pulse" x-text="unreadNotificationsCount"></span>
-                                </template>
-                            </button>
-                        </div>
-                    </header>
+            <!-- Popular Highlighting Quick Pills -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center space-x-2 overflow-x-auto pb-2 custom-scrollbar">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 mr-2"><i class="fa-solid fa-fire text-amber-500 mr-1"></i>ยอดนิยม:</span>
+                    <template x-for="popProv in popularProvinces" :key="popProv.name">
+                        <button @click="filterByPopularProvince(popProv.name)" 
+                                :class="selectedProvince === popProv.name ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-emerald-50 border border-slate-200'"
+                                class="px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all flex items-center space-x-1.5">
+                            <span x-text="popProv.icon"></span>
+                            <span x-text="popProv.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </section>
 
-                    <!-- USER BODY PANELS -->
-                    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <!-- Active Filters & Listings Summary -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center">
+                            <span>โฮมสเตย์ชุมชนที่พร้อมให้บริการ</span>
+                            <span class="ml-3 text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" x-text="displayedHomestays.length + ' รายการ'"></span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1" x-text="'กำลังแสดงผล: ' + (selectedProvince !== 'ทั้งหมด' ? 'จังหวัด ' + selectedProvince : (selectedRegion !== 'ทั้งหมด' ? 'ภาค ' + selectedRegion : 'ทุกพื้นที่ทั่วประเทศ'))"></p>
+                    </div>
 
-                        <!-- TAB 1: EXPLORE & CASCADING BOOKING -->
-                        <div x-show="userTab === 'explore'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
-                            
-                            <!-- Search & Filter Banner -->
-                            <div class="bg-gradient-to-br from-emerald-700 to-teal-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden space-y-4">
-                                <div class="relative z-10 space-y-3">
-                                    <div class="flex justify-between items-center flex-wrap gap-2">
-                                        <h2 class="text-lg font-bold flex items-center gap-2">
-                                            <i class="fa-solid fa-map-location-dot text-amber-300"></i> ค้นหาโฮมสเตย์ตามจังหวัดที่ต้องการ
-                                        </h2>
-                                        <span class="text-xs bg-emerald-900/80 px-3 py-1 rounded-full text-emerald-200 font-medium border border-emerald-500/30">
-                                            <i class="fa-solid fa-layer-group text-amber-300 mr-1"></i>เลือกจังหวัด -> โฮมสเตย์ -> กิจกรรม
-                                        </span>
-                                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-xs text-slate-500 font-medium shrink-0">เรียงตาม:</label>
+                        <select x-model="sortBy" class="text-xs border border-slate-200 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                            <option value="recommended">แนะนำพิเศษ</option>
+                            <option value="price_asc">ราคา: ต่ำไปสูง</option>
+                            <option value="price_desc">ราคา: สูงไปต่ำ</option>
+                            <option value="rating">คะแนนรีวิวสูงสุด</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
 
-                                    <!-- STEP 1: PROVINCE SELECTOR & SEARCH -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div class="relative">
-                                            <label class="block text-xs text-emerald-100 font-light mb-1">1. เลือกจังหวัด (ครบ 77 จังหวัด)</label>
-                                            <div class="relative">
-                                                <i class="fa-solid fa-location-dot absolute left-3 top-3 text-emerald-600 z-10"></i>
-                                                <select x-model="selectedProvince" @change="onProvinceChange()" class="w-full pl-9 pr-8 py-2.5 bg-white text-slate-900 font-semibold rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 shadow">
-                                                    <template x-for="p in all77Provinces" :key="p">
-                                                        <option :value="p" x-text="p"></option>
-                                                    </template>
-                                                </select>
-                                            </div>
-                                        </div>
+            <!-- Homestays Grid -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <template x-if="displayedHomestays.length === 0">
+                    <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-300">
+                        <i class="fa-solid fa-house-circle-xmark text-5xl text-slate-300 mb-3"></i>
+                        <h3 class="text-lg font-semibold text-slate-700">ไม่พบโฮมสเตย์ตามเงื่อนไขที่ค้นหา</h3>
+                        <p class="text-sm text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือเลือกดูจังหวัดยอดนิยมอื่น ๆ</p>
+                        <button @click="resetFilters()" class="mt-4 px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-700 shadow-sm transition-all">
+                            ล้างตัวกรองทั้งหมด
+                        </button>
+                    </div>
+                </template>
 
-                                        <!-- SEARCH INPUT -->
-                                        <div class="relative">
-                                            <label class="block text-xs text-emerald-100 font-light mb-1">2. ค้นหาชื่อโฮมสเตย์/กิจกรรม</label>
-                                            <div class="relative">
-                                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-                                                <input type="text" x-model="searchQuery" placeholder="พิมพ์ชื่อโฮมสเตย์, สถานที่..." class="w-full pl-9 pr-4 py-2.5 bg-white text-slate-800 placeholder-slate-400 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 shadow">
-                                            </div>
-                                        </div>
-                                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="hs in displayedHomestays" :key="hs.id">
+                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 hover:shadow-xl transition-all duration-300 flex flex-col group">
+                            <!-- Image Container -->
+                            <div class="relative h-52 overflow-hidden bg-slate-100">
+                                <img :src="hs.image" :alt="hs.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/e2e8f0/475569?text=PAKJAI+Homestay'">
+                                
+                                <div class="absolute top-3 left-3">
+                                    <span class="px-2.5 py-1 bg-slate-900/70 backdrop-blur-md text-white text-xs font-medium rounded-lg flex items-center shadow-md">
+                                        <i class="fa-solid fa-location-dot text-rose-400 mr-1.5"></i>
+                                        <span x-text="hs.province"></span>
+                                    </span>
+                                </div>
 
-                                    <!-- CASCADING STATUS -->
-                                    <div class="bg-emerald-950/60 backdrop-blur border border-emerald-400/30 rounded-xl p-3 text-xs text-emerald-100 flex flex-wrap items-center justify-between gap-2">
-                                        <div class="flex items-center space-x-2 flex-wrap">
-                                            <span class="font-bold text-amber-300"><i class="fa-solid fa-filter mr-1"></i>จังหวัดที่เลือก:</span>
-                                            <span class="bg-emerald-800 px-2.5 py-1 rounded-lg text-white font-bold" x-text="selectedProvince"></span>
-                                            <template x-if="selectedHomestay">
-                                                <span class="flex items-center gap-1">
-                                                    <i class="fa-solid fa-chevron-right text-[10px] text-emerald-300"></i>
-                                                    <span class="bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg font-extrabold" x-text="selectedHomestay.title"></span>
-                                                </span>
-                                            </template>
-                                        </div>
-                                        <template x-if="selectedHomestay">
-                                            <button @click="resetHomestaySelection()" class="text-xs text-amber-300 hover:underline flex items-center gap-1 font-medium">
-                                                <i class="fa-solid fa-rotate-left"></i> แสดงโฮมสเตย์ทั้งหมดในจังหวัด
-                                            </button>
+                                <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-bold text-amber-600 flex items-center shadow-md">
+                                    <i class="fa-solid fa-star mr-1 text-amber-500"></i>
+                                    <span x-text="hs.rating"></span>
+                                    <span class="text-slate-400 font-normal ml-1" x-text="'(' + hs.reviewsCount + ')'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Content Details -->
+                            <div class="p-5 flex-grow flex flex-col justify-between space-y-4">
+                                <div>
+                                    <div class="text-xs font-semibold text-emerald-600 tracking-wider uppercase mb-1" x-text="hs.region + ' • ' + hs.district"></div>
+                                    <h3 class="text-lg font-bold text-slate-800 line-clamp-1 group-hover:text-emerald-600 transition-colors" x-text="hs.name"></h3>
+                                    <p class="text-xs text-slate-500 mt-1 line-clamp-2" x-text="hs.description"></p>
+                                </div>
+
+                                <div class="space-y-1.5 pt-2 border-t border-slate-100">
+                                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">กิจกรรมเด่นไฮไลท์:</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="act in hs.activities.slice(0, 2)" :key="act">
+                                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-medium rounded-md border border-emerald-100 flex items-center">
+                                                <i class="fa-solid fa-sparkles text-[9px] mr-1 text-emerald-500"></i>
+                                                <span x-text="act"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="hs.activities.length > 2">
+                                            <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-medium rounded-md" x-text="'+' + (hs.activities.length - 2)"></span>
                                         </template>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- STEP 2: HOMESTAYS LIST -->
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-end">
+                                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
                                     <div>
-                                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full uppercase">ขั้นตอนที่ 1/2</span>
-                                        <h3 class="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 mt-1">
-                                            <i class="fa-solid fa-house-chimney text-emerald-600"></i>
-                                            <span>โฮมสเตย์ในจังหวัด <span class="text-emerald-700 font-extrabold" x-text="selectedProvince"></span></span>
-                                        </h3>
+                                        <span class="text-xs text-slate-400 block">เริ่มต้น</span>
+                                        <div class="text-lg font-extrabold text-emerald-700">
+                                            ฿<span x-text="hs.pricePerNight.toLocaleString()"></span>
+                                            <span class="text-xs font-normal text-slate-500">/คืน</span>
+                                        </div>
                                     </div>
-                                    <span class="text-xs text-slate-500 font-medium" x-text="`${filteredHomestays.length} แห่ง`"></span>
+                                    <button @click="openHomestayDetail(hs)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center">
+                                        ดูรายละเอียด <i class="fa-solid fa-arrow-right ml-1.5"></i>
+                                    </button>
                                 </div>
-
-                                <template x-if="filteredHomestays.length === 0">
-                                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center text-amber-900 space-y-2">
-                                        <i class="fa-solid fa-circle-info text-3xl text-amber-500"></i>
-                                        <p class="text-sm font-semibold">ยังไม่มีโฮมสเตย์ในจังหวัดนี้ หรือ ไม่ตรงกับคีย์เวิร์ดค้นหา</p>
-                                        <p class="text-xs text-amber-700">ลองเลือกจังหวัดอื่นๆ เช่น เชียงใหม่, สมุทรสงคราม, นครศรีธรรมราช, น่าน ฯลฯ</p>
-                                    </div>
-                                </template>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    <template x-for="item in filteredHomestays" :key="item.id">
-                                        <div :class="selectedHomestay && selectedHomestay.id === item.id ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : 'bg-white'" 
-                                             class="rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between group">
-                                            <div>
-                                                <div class="relative h-48 overflow-hidden">
-                                                    <img :src="item.image" :alt="item.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800'">
-                                                    <div class="absolute top-2.5 right-2.5 bg-slate-900/80 backdrop-blur text-white text-xs px-2.5 py-1 rounded-full flex items-center space-x-1 font-semibold">
-                                                        <i class="fa-solid fa-star text-amber-400"></i>
-                                                        <span x-text="item.rating"></span>
-                                                        <span class="text-slate-300 font-normal" x-text="`(${item.reviewsCount})`"></span>
-                                                    </div>
-                                                    <div class="absolute top-2.5 left-2.5 bg-emerald-800/90 text-emerald-100 text-[11px] px-2.5 py-1 rounded-lg font-medium shadow">
-                                                        <i class="fa-solid fa-user text-amber-300 mr-1"></i><span x-text="`เจ้าของ: ${item.ownerName}`"></span>
-                                                    </div>
-                                                    <!-- Availability Tag -->
-                                                    <div class="absolute bottom-2.5 left-2.5 px-3 py-1 rounded-lg text-xs font-bold shadow"
-                                                         :class="item.availableRooms > 0 ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'">
-                                                         <span x-text="item.availableRooms > 0 ? `ว่าง ${item.availableRooms} / ${item.totalRooms} ห้อง` : 'ห้องพักเต็มแล้ว'"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="p-4 space-y-2">
-                                                    <h4 class="font-bold text-slate-900 text-base leading-snug" x-text="item.title"></h4>
-                                                    <p class="text-xs text-slate-500 flex items-center gap-1">
-                                                        <i class="fa-solid fa-location-dot text-rose-500"></i> <span x-text="item.location"></span>
-                                                    </p>
-                                                    <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed" x-text="item.description"></p>
-                                                    <div class="flex flex-wrap gap-1 pt-1">
-                                                        <template x-for="tag in item.tags" :key="tag">
-                                                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-200" x-text="tag"></span>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="p-4 pt-0 flex flex-col space-y-2 border-t border-slate-100 mt-2">
-                                                <div class="flex justify-between items-center pt-2">
-                                                    <div>
-                                                        <span class="text-[11px] text-slate-400 block">ราคาเริ่มต้น</span>
-                                                        <div class="text-base font-extrabold text-emerald-600">฿<span x-text="item.pricePerNight.toLocaleString()"></span> <span class="text-xs text-slate-500 font-normal">/คืน</span></div>
-                                                    </div>
-                                                    <button @click="selectHomestayForActivities(item)" 
-                                                            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition flex items-center space-x-1 shadow">
-                                                        <i class="fa-solid fa-arrow-down-short-wide"></i>
-                                                        <span>ดูกิจกรรมชุมชน</span>
-                                                    </button>
-                                                </div>
-                                                <button @click="openBookingModal('homestay', item)" 
-                                                        :disabled="item.availableRooms <= 0"
-                                                        :class="item.availableRooms > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
-                                                        class="w-full py-2.5 rounded-xl text-xs font-bold shadow transition flex items-center justify-center space-x-1.5">
-                                                    <i class="fa-solid fa-calendar-check"></i>
-                                                    <span>จองห้องพักโฮมสเตย์นี้</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <!-- STEP 3: COMMUNITY ACTIVITIES -->
-                            <div class="space-y-3 pt-6 border-t border-slate-200">
-                                <div class="flex justify-between items-end">
-                                    <div>
-                                        <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-2.5 py-0.5 rounded-full uppercase">ขั้นตอนที่ 2/2</span>
-                                        <h3 class="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 mt-1">
-                                            <i class="fa-solid fa-person-hiking text-teal-600"></i>
-                                            <span>กิจกรรมท่องเที่ยวชุมชน <span class="text-teal-700 font-bold" x-text="selectedHomestay ? `ประจำ ${selectedHomestay.title}` : `ในจังหวัด ${selectedProvince}`"></span></span>
-                                        </h3>
-                                    </div>
-                                    <span class="text-xs text-slate-500 font-medium" x-text="`${filteredActivities.length} กิจกรรม`"></span>
-                                </div>
-
-                                <template x-if="filteredActivities.length === 0">
-                                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center text-slate-500 space-y-1">
-                                        <i class="fa-solid fa-calendar-xmark text-2xl text-slate-400"></i>
-                                        <p class="text-xs font-medium">ยังไม่มีรายการกิจกรรมชุมชนเปิดบริการในโฮมสเตย์หรือจังหวัดนี้</p>
-                                    </div>
-                                </template>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    <template x-for="act in filteredActivities" :key="act.id">
-                                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between group">
-                                            <div>
-                                                <div class="relative h-44 overflow-hidden">
-                                                    <img :src="act.image" :alt="act.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://images.unsplash.com/photo-1544717305-2782549b5136?w=800'">
-                                                    <div class="absolute bottom-2.5 left-2.5 bg-slate-900/80 backdrop-blur text-white text-xs px-2.5 py-1 rounded-lg font-semibold">
-                                                        <i class="fa-solid fa-user-group text-amber-400 mr-1"></i>
-                                                        <span x-text="act.availableSeats > 0 ? `ว่าง ${act.availableSeats} / ${act.totalSeats} ที่` : 'เต็มแล้ว'"></span>
-                                                    </div>
-                                                    <div class="absolute top-2.5 right-2.5 bg-teal-800/90 text-teal-100 text-[10px] px-2.5 py-1 rounded-lg font-medium shadow">
-                                                        <i class="fa-solid fa-house-user mr-1"></i><span x-text="getHomestayTitleById(act.homestayId)"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="p-4 space-y-2">
-                                                    <h4 class="font-bold text-slate-900 text-sm sm:text-base leading-snug" x-text="act.title"></h4>
-                                                    <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed" x-text="act.description"></p>
-                                                    <div class="text-xs text-slate-500 flex items-center space-x-3 pt-1">
-                                                        <span><i class="fa-regular fa-clock text-emerald-600 mr-1"></i><span x-text="act.duration"></span></span>
-                                                        <span><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i><span x-text="act.location"></span></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="p-4 pt-0 flex justify-between items-center border-t border-slate-100 mt-2">
-                                                <div>
-                                                    <span class="text-[11px] text-slate-400 block">ค่าบริการ</span>
-                                                    <div class="text-base font-extrabold text-teal-700">฿<span x-text="act.pricePerPerson.toLocaleString()"></span> <span class="text-xs text-slate-500 font-normal">/ท่าน</span></div>
-                                                </div>
-                                                <button @click="openBookingModal('activity', act)" 
-                                                        :disabled="act.availableSeats <= 0"
-                                                        :class="act.availableSeats > 0 ? 'bg-teal-600 hover:bg-teal-700 text-white' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
-                                                        class="px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-1.5">
-                                                    <i class="fa-solid fa-ticket"></i>
-                                                    <span>จองกิจกรรม</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- TAB 2: MY BOOKINGS HISTORY -->
-                        <div x-show="userTab === 'bookings'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-4">
-                            <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                                <i class="fa-solid fa-receipt text-emerald-600"></i> ประวัติการจองโฮมสเตย์และกิจกรรมของฉัน
-                            </h2>
-
-                            <template x-if="userBookings.length === 0">
-                                <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 p-6 space-y-3">
-                                    <i class="fa-regular fa-folder-open text-4xl text-slate-300"></i>
-                                    <p class="text-sm text-slate-500">ยังไม่มีประวัติการจองใดๆ ในขณะนี้</p>
-                                    <button @click="userTab = 'explore'" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow">ไปเลือกที่พักโฮมสเตย์</button>
-                                </div>
-                            </template>
-
-                            <div class="space-y-3">
-                                <template x-for="bk in userBookings" :key="bk.id">
-                                    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3 relative">
-                                        <div class="flex justify-between items-start border-b border-slate-100 pb-3 flex-wrap gap-2">
-                                            <div>
-                                                <span class="text-[11px] font-mono font-semibold text-slate-400" x-text="`รหัสการจอง: #${bk.id}`"></span>
-                                                <h4 class="font-bold text-slate-900 text-base" x-text="bk.itemName"></h4>
-                                                <p class="text-xs text-slate-500" x-text="bk.type === 'homestay' ? `ที่พักโฮมสเตย์ (${bk.province})` : `กิจกรรมชุมชน (${bk.province})`"></p>
-                                            </div>
-                                            <span class="px-3 py-1 rounded-full text-xs font-bold"
-                                                :class="{
-                                                    'bg-amber-100 text-amber-800': bk.status === 'รอเข้าพัก',
-                                                    'bg-emerald-100 text-emerald-800': bk.status === 'สำเร็จแล้ว',
-                                                    'bg-rose-100 text-rose-800': bk.status === 'ยกเลิก'
-                                                }"
-                                                x-text="bk.status">
-                                            </span>
-                                        </div>
-
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-slate-600">
-                                            <div>
-                                                <span class="text-slate-400 block text-[10px]">วันที่จอง/เข้าพัก</span>
-                                                <span class="font-semibold text-slate-800" x-text="bk.date"></span>
-                                            </div>
-                                            <div>
-                                                <span class="text-slate-400 block text-[10px]">รายละเอียดการจอง</span>
-                                                <span class="font-semibold text-slate-800" x-text="bk.details"></span>
-                                            </div>
-                                            <div>
-                                                <span class="text-slate-400 block text-[10px]">ผู้ติดต่อโฮมสเตย์</span>
-                                                <span class="font-semibold text-slate-800" x-text="bk.hostName"></span>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex justify-between items-center pt-3 border-t border-slate-100">
-                                            <div>
-                                                <span class="text-[10px] text-slate-400">ราคารวมชำระแล้ว</span>
-                                                <div class="text-base font-extrabold text-emerald-600">฿<span x-text="bk.totalPrice.toLocaleString()"></span></div>
-                                            </div>
-
-                                            <template x-if="bk.status === 'สำเร็จแล้ว' && !bk.hasReviewed">
-                                                <button @click="openReviewModal(bk)" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition">
-                                                    <i class="fa-solid fa-star"></i>
-                                                    <span>เขียนรีวิวให้โฮมสเตย์</span>
-                                                </button>
-                                            </template>
-
-                                            <template x-if="bk.hasReviewed">
-                                                <span class="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                                                    <i class="fa-solid fa-circle-check"></i> ส่งรีวิวแล้ว
-                                                </span>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-
-                        </div>
-
-                        <!-- TAB 3: NOTIFICATIONS CENTER -->
-                        <div x-show="userTab === 'notifications'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-4">
-                            <div class="flex justify-between items-center">
-                                <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                                    <i class="fa-solid fa-bell text-amber-500"></i> การแจ้งเตือนข่าวสาร & โปรโมชั่น
-                                </h2>
-                                <button @click="markAllNotificationsAsRead()" class="text-xs text-emerald-600 font-semibold hover:underline">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
-                            </div>
-
-                            <div class="space-y-3">
-                                <template x-for="notif in userNotifications" :key="notif.id">
-                                    <div :class="notif.read ? 'bg-white text-slate-600 border-slate-200' : 'bg-emerald-50 text-slate-900 border-emerald-300 font-medium'" class="p-4 rounded-2xl border shadow-sm flex items-start space-x-3 transition">
-                                        <div :class="notif.type === 'reminder' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-600 text-white'" class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 text-sm">
-                                            <i :class="notif.type === 'reminder' ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-bullhorn'"></i>
-                                        </div>
-                                        <div class="flex-1 space-y-1">
-                                            <div class="flex justify-between items-center">
-                                                <h4 class="text-xs sm:text-sm font-bold" x-text="notif.title"></h4>
-                                                <span class="text-[10px] text-slate-400" x-text="notif.time"></span>
-                                            </div>
-                                            <p class="text-xs text-slate-600 leading-relaxed" x-text="notif.message"></p>
-                                        </div>
-                                    </div>
-                                </template>
                             </div>
                         </div>
+                    </template>
+                </div>
+            </section>
+        </div>
 
+        <!-- ==================== VIEW 2: PROVINCIAL ACTIVITIES SHOWCASE ==================== -->
+        <div x-show="currentView === 'activities'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+            <div class="bg-gradient-to-r from-teal-800 to-emerald-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="px-3 py-1 bg-white/20 text-xs font-semibold rounded-full border border-white/30 backdrop-blur-md">
+                        77 PROVINCIAL HIGHLIGHTS
+                    </span>
+                    <h2 class="text-3xl font-extrabold mt-3">กิจกรรมเด่นวิถีไทย 77 จังหวัด</h2>
+                    <p class="text-emerald-100 text-sm mt-2">
+                        สัมผัสภูมิปัญญา อาหารพื้นบ้าน การเกษตร และวิถีชีวิตดั้งเดิมของชาวบ้านในแต่ละจังหวัดทั่วประเทศ
+                    </p>
+                </div>
+            </div>
+
+            <!-- Province Selector Tabs -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block">เลือกดูตามจังหวัด:</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                    <template x-for="pName in allProvincesList" :key="pName">
+                        <button @click="activityViewProvince = pName" 
+                                :class="activityViewProvince === pName ? 'bg-emerald-600 text-white font-bold shadow' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
+                                class="px-2.5 py-1.5 rounded-lg text-xs truncate text-left transition-all">
+                            📍 <span x-text="pName"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Selected Province Activity Cards Showcase -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800 flex items-center">
+                            <span class="mr-2">📍 กิจกรรมเด่นในจังหวัด</span>
+                            <span class="text-emerald-600 font-extrabold" x-text="activityViewProvince"></span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">กิจกรรมสัมผัสวิถีชีวิตที่สามารถร่วมสนุกเมื่อเข้าพักโฮมสเตย์ในพื้นที่นี้</p>
                     </div>
-
-                    <!-- USER BOTTOM NAVBAR -->
-                    <nav class="bg-white border-t border-slate-200 px-6 py-2.5 flex justify-around items-center shrink-0">
-                        <button @click="userTab = 'explore'" :class="userTab === 'explore' ? 'text-emerald-600 font-bold' : 'text-slate-400 hover:text-slate-600'" class="flex flex-col items-center text-xs transition">
-                            <i class="fa-solid fa-compass text-lg mb-0.5"></i>
-                            <span>ค้นหาที่พัก</span>
-                        </button>
-                        <button @click="userTab = 'bookings'" :class="userTab === 'bookings' ? 'text-emerald-600 font-bold' : 'text-slate-400 hover:text-slate-600'" class="flex flex-col items-center text-xs transition">
-                            <i class="fa-solid fa-bookmark text-lg mb-0.5"></i>
-                            <span>การจองของฉัน</span>
-                        </button>
-                        <button @click="userTab = 'notifications'" :class="userTab === 'notifications' ? 'text-emerald-600 font-bold' : 'text-slate-400 hover:text-slate-600'" class="flex flex-col items-center text-xs transition relative">
-                            <div class="relative">
-                                <i class="fa-solid fa-bell text-lg mb-0.5"></i>
-                                <template x-if="unreadNotificationsCount > 0">
-                                    <span class="absolute -top-1 -right-2 w-3.5 h-3.5 bg-amber-400 text-slate-950 text-[9px] font-extrabold rounded-full flex items-center justify-center"></span>
-                                </template>
-                            </div>
-                            <span>แจ้งเตือน</span>
-                        </button>
-                    </nav>
-
                 </div>
 
-            </div>
-        </template>
-
-        <!-- ROLE 2: HOMESTAY HOST / OWNER -->
-        <template x-if="currentRole === 'host'">
-            <div class="flex-1 bg-slate-100 flex flex-col md:flex-row">
-                
-                <!-- HOST SIDEBAR -->
-                <aside class="w-full md:w-64 bg-slate-900 text-slate-300 p-5 shrink-0 border-r border-slate-800 space-y-6">
-                    <!-- Host Active Profile Header -->
-                    <div class="bg-slate-800/80 p-3 rounded-2xl border border-amber-500/30 space-y-2">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xl shrink-0">
-                                <i class="fa-solid fa-store"></i>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="(act, idx) in getActivitiesForProvince(activityViewProvince)" :key="idx">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-emerald-300 transition-all flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
+                                <i class="fa-solid fa-seedling"></i>
                             </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded">แผงควบคุมเจ้าของ</span>
-                                <h2 class="font-bold text-white text-sm truncate" x-text="currentHostHomestay ? currentHostHomestay.ownerName : 'เจ้าของโฮมสเตย์'"></h2>
+                            <div class="space-y-1">
+                                <h4 class="font-bold text-slate-800 text-sm" x-text="act.name"></h4>
+                                <p class="text-xs text-slate-500 leading-relaxed" x-text="act.desc"></p>
+                                <span class="inline-block text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100" x-text="'เหมาะสำหรับ: ทุกวัย'"></span>
                             </div>
                         </div>
-                        <p class="text-xs text-amber-300 font-semibold truncate" x-text="currentHostHomestay ? currentHostHomestay.title : ''"></p>
+                    </template>
+                </div>
+
+                <div class="pt-6 border-t border-slate-100">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3">โฮมสเตย์ในจังหวัด <span x-text="activityViewProvince"></span> ที่มีกิจกรรมนี้</h4>
+                    <div class="flex flex-wrap gap-3">
+                        <template x-for="hs in getHomestaysInProvince(activityViewProvince)" :key="hs.id">
+                            <button @click="openHomestayDetail(hs)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all text-left flex items-center space-x-2">
+                                <i class="fa-solid fa-house-chimney text-emerald-600 text-xs"></i>
+                                <span class="text-xs font-semibold text-slate-700" x-text="hs.name"></span>
+                                <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500" x-text="'฿' + hs.pricePerNight"></span>
+                            </button>
+                        </template>
+                        <template x-if="getHomestaysInProvince(activityViewProvince).length === 0">
+                            <span class="text-xs text-slate-400 italic">ยังไม่มีข้อมูลโฮมสเตย์ในจังหวัดนี้ (เจ้าของโฮมสเตย์สามารถลงทะเบียนเพิ่มได้)</span>
+                        </template>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Host Nav Tabs -->
-                    <nav class="space-y-1.5 text-xs font-semibold">
-                        <button @click="hostTab = 'dashboard'" :class="hostTab === 'dashboard' ? 'bg-amber-500 text-slate-950 font-bold shadow' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-chart-pie w-4 text-base"></i>
-                            <span>สรุปยอดโฮมสเตย์ตนเอง</span>
-                        </button>
-                        <button @click="hostTab = 'homestays'" :class="hostTab === 'homestays' ? 'bg-amber-500 text-slate-950 font-bold shadow' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-house-chimney-window w-4 text-base"></i>
-                            <span>จัดการที่พัก / ห้องพัก</span>
-                        </button>
-                        <button @click="hostTab = 'activities'" :class="hostTab === 'activities' ? 'bg-amber-500 text-slate-950 font-bold shadow' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-person-hiking w-4 text-base"></i>
-                            <span>จัดการกิจกรรมชุมชน</span>
-                        </button>
-                        <button @click="hostTab = 'bookings'" :class="hostTab === 'bookings' ? 'bg-amber-500 text-slate-950 font-bold shadow' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-book-bookmark w-4 text-base"></i>
-                            <span>รายการสั่งจองของลูกค้า</span>
-                        </button>
-                    </nav>
+        <!-- ==================== VIEW 3: HOMESTAY OWNER PORTAL ==================== -->
+        <div x-show="currentView === 'owner_dashboard'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <span class="px-3 py-1 bg-emerald-500/30 text-emerald-200 text-xs font-semibold rounded-full border border-emerald-400/30">
+                        HOMESTAY OWNER MANAGEMENT PORTAL
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mt-2" x-text="'สวัสดี, คุณ' + currentUser.name"></h2>
+                    <p class="text-emerald-100 text-xs sm:text-sm mt-1">จัดการข้อมูลโฮมสเตย์ ราคา และกิจกรรมเด่นประจำจังหวัดของคุณ</p>
+                </div>
 
-                    <div class="pt-6 border-t border-slate-800 text-xs text-slate-400 space-y-1">
-                        <p class="text-[11px]">สถานะบัญชี: <span class="text-emerald-400 font-bold">ยืนยันแล้ว</span></p>
-                        <p class="text-[11px]">จังหวัด: <span class="text-amber-300 font-bold" x-text="currentHostHomestay ? currentHostHomestay.province : ''"></span></p>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-xs space-y-1">
+                    <div class="flex justify-between items-center space-x-4">
+                        <span class="text-slate-200">สถานะคำขออนุมัติ:</span>
+                        <span class="font-bold text-amber-300" x-text="getOwnerPendingCount() + ' รายการรอดำเนินการ'"></span>
                     </div>
-                </aside>
+                    <p class="text-[11px] text-slate-300">* การแก้ไขข้อมูลจะส่งให้ Super Admin ตรวจสอบก่อนแสดงผลจริง</p>
+                </div>
+            </div>
 
-                <!-- HOST MAIN CONTENT -->
-                <div class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">โฮมสเตย์ในการดูแลของคุณ</h3>
+                        <p class="text-xs text-slate-500">เลือกโฮมสเตย์เพื่อแก้ไขราคา คำอธิบาย หรือกิจกรรมเด่น</p>
+                    </div>
+                </div>
 
-                    <!-- HOST TAB 1: PERSONAL DASHBOARD -->
-                    <div x-show="hostTab === 'dashboard'" class="space-y-6">
-                        <div class="flex justify-between items-center flex-wrap gap-2">
+                <template x-for="hs in getOwnerHomestays()" :key="hs.id">
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-6">
+                        <div class="flex justify-between items-start">
                             <div>
-                                <h2 class="text-xl sm:text-2xl font-bold text-slate-900" x-text="`แดชบอร์ดสรุปยอด - ${currentHostHomestay ? currentHostHomestay.title : ''}`"></h2>
-                                <p class="text-xs text-slate-500">ข้อมูลสถิติเฉพาะโฮมสเตย์ที่คุณเป็นเจ้าของเท่านั้น</p>
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-md" x-text="hs.province"></span>
+                                <h4 class="text-xl font-bold text-slate-800 mt-2" x-text="hs.name"></h4>
+                                <p class="text-xs text-slate-500" x-text="hs.region + ' • ' + hs.district"></p>
                             </div>
-                            <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full">
-                                <i class="fa-solid fa-shield-halved mr-1"></i> Host Private Data Scope
+
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full border"
+                                  :class="hs.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'">
+                                <i class="fa-solid mr-1" :class="hs.status === 'approved' ? 'fa-circle-check' : 'fa-clock'"></i>
+                                <span x-text="hs.status === 'approved' ? 'อนุมัติแล้ว (แสดงผลจริง)' : 'มีรายการรออนุมัติ'"></span>
                             </span>
                         </div>
 
-                        <!-- 4 METRIC CARDS FOR HOST -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                                <div class="flex justify-between items-center text-slate-500 text-xs font-medium">
-                                    <span>ห้องว่างคงเหลือวันนี้</span>
-                                    <i class="fa-solid fa-bed text-emerald-600 text-lg"></i>
-                                </div>
-                                <div class="text-2xl font-extrabold text-slate-900" x-text="currentHostHomestay ? `${currentHostHomestay.availableRooms} / ${currentHostHomestay.totalRooms} ห้อง` : '0'"></div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="h-full bg-emerald-500" :style="`width: ${currentHostHomestay ? (currentHostHomestay.availableRooms / currentHostHomestay.totalRooms) * 100 : 0}%`"></div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                                <div class="flex justify-between items-center text-slate-500 text-xs font-medium">
-                                    <span>กิจกรรมชุมชนของคุณ</span>
-                                    <i class="fa-solid fa-person-hiking text-teal-600 text-lg"></i>
-                                </div>
-                                <div class="text-2xl font-extrabold text-slate-900" x-text="`${currentHostActivities.length} รายการ`"></div>
-                                <span class="text-[11px] text-teal-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>พร้อมเปิดรับนักท่องเที่ยว</span>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                                <div class="flex justify-between items-center text-slate-500 text-xs font-medium">
-                                    <span>รายการจองเข้ามาแล้ว</span>
-                                    <i class="fa-solid fa-receipt text-amber-600 text-lg"></i>
-                                </div>
-                                <div class="text-2xl font-extrabold text-slate-900" x-text="`${currentHostBookings.length} ออเดอร์`"></div>
-                                <span class="text-[11px] text-amber-600 font-semibold"><i class="fa-solid fa-clock mr-1"></i>รอการต้อนรับ</span>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                                <div class="flex justify-between items-center text-slate-500 text-xs font-medium">
-                                    <span>รายได้ประเมินรวม</span>
-                                    <i class="fa-solid fa-wallet text-emerald-600 text-lg"></i>
-                                </div>
-                                <div class="text-2xl font-extrabold text-emerald-600">฿<span x-text="hostTotalRevenue.toLocaleString()"></span></div>
-                                <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-arrow-trend-up mr-1"></i>อัปเดตเรียลไทม์</span>
-                            </div>
-                        </div>
-
-                        <!-- HOST DETAIL HOMESTAY OVERVIEW CARD -->
-                        <template x-if="currentHostHomestay">
-                            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-                                <h3 class="font-bold text-slate-900 text-base border-b border-slate-100 pb-3 flex justify-between items-center">
-                                    <span><i class="fa-solid fa-circle-info text-amber-500 mr-2"></i>รายละเอียดข้อมูลโฮมสเตย์ปัจจุบันของคุณ</span>
-                                    <button @click="openAdminModal('homestay', 'edit', currentHostHomestay)" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-600 shadow transition">
-                                        <i class="fa-solid fa-pen-to-square mr-1"></i> แก้ไขข้อมูลนี้
-                                    </button>
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <img :src="currentHostHomestay.image" class="w-full h-48 rounded-xl object-cover border border-slate-200 shadow">
-                                    <div class="md:col-span-2 space-y-3 text-xs text-slate-700">
-                                        <div class="flex justify-between">
-                                            <span class="text-slate-400">ชื่อโฮมสเตย์:</span>
-                                            <span class="font-bold text-slate-900 text-sm" x-text="currentHostHomestay.title"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-slate-400">เจ้าของ / ผู้ดูแล:</span>
-                                            <span class="font-semibold text-emerald-700" x-text="currentHostHomestay.ownerName"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-slate-400">สถานที่ตั้ง:</span>
-                                            <span class="font-medium" x-text="`${currentHostHomestay.location} (${currentHostHomestay.province})`"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-slate-400">ราคาต่อคืน:</span>
-                                            <span class="font-bold text-emerald-600 text-sm" x-text="`฿${currentHostHomestay.pricePerNight.toLocaleString()}`"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-slate-400">สถานะห้องพัก:</span>
-                                            <span class="font-bold text-amber-600" x-text="`ว่าง ${currentHostHomestay.availableRooms} / ทั้งหมด ${currentHostHomestay.totalRooms} ห้อง`"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-slate-400 block mb-1">คำอธิบายที่พัก:</span>
-                                            <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200 leading-relaxed" x-text="currentHostHomestay.description"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                    </div>
-
-                    <!-- HOST TAB 2: EDIT HOMESTAY / ROOMS -->
-                    <div x-show="hostTab === 'homestays'" class="space-y-4">
-                        <div class="flex justify-between items-center">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
                             <div>
-                                <h2 class="text-xl font-bold text-slate-900">จัดการข้อมูลโฮมสเตย์ & ห้องพัก</h2>
-                                <p class="text-xs text-slate-500">อัปเดตราคา จำนวนห้องว่าง รูปภาพ และคำอธิบาย</p>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">ราคาต่อคืน (บาท):</label>
+                                <input type="number" x-model.number="ownerEditForms[hs.id].pricePerNight" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">จังหวัด (77 จังหวัด):</label>
+                                <select x-model="ownerEditForms[hs.id].province" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+                                    <template x-for="p in allProvincesList" :key="p">
+                                        <option :value="p" x-text="p"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">รายละเอียดแนะนำโฮมสเตย์:</label>
+                                <textarea x-model="ownerEditForms[hs.id].description" rows="3" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"></textarea>
+                            </div>
+
+                            <div class="md:col-span-2 space-y-2">
+                                <label class="block text-xs font-bold text-slate-700">กิจกรรมเด่นไฮไลท์ (ประจำจังหวัด/โฮมสเตย์):</label>
+                                
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <template x-for="(act, aIdx) in ownerEditForms[hs.id].activities" :key="aIdx">
+                                        <span class="inline-flex items-center px-3 py-1 bg-white border border-emerald-300 text-emerald-800 text-xs font-medium rounded-xl shadow-sm">
+                                            <i class="fa-solid fa-leaf text-emerald-500 mr-1.5"></i>
+                                            <span x-text="act"></span>
+                                            <button @click="removeActivityFromOwnerForm(hs.id, aIdx)" class="ml-2 text-rose-500 hover:text-rose-700 font-bold">×</button>
+                                        </span>
+                                    </template>
+                                </div>
+
+                                <div class="flex space-x-2">
+                                    <input type="text" x-model="ownerEditForms[hs.id].newActivityInput" placeholder="เพิ่มกิจกรรมใหม่ เช่น ทำผ้ามัดย้อม, ล่องเรือชมหิ่งห้อย..." class="flex-grow p-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500">
+                                    <button @click="addActivityToOwnerForm(hs.id)" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition-all">
+                                        + เพิ่มกิจกรรม
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <template x-if="currentHostHomestay">
-                            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                                    <h3 class="font-bold text-slate-900 text-base" x-text="currentHostHomestay.title"></h3>
-                                    <button @click="openAdminModal('homestay', 'edit', currentHostHomestay)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow">
-                                        <i class="fa-solid fa-pen-to-square mr-1"></i> แก้ไขโฮมสเตย์
-                                    </button>
+                        <div class="flex justify-end pt-4 border-t border-slate-200">
+                            <button @click="submitOwnerChanges(hs.id)" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> บันทึกและส่งคำขออนุมัติไปยัง Admin
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 4: SUPER ADMIN APPROVAL WORKFLOW ==================== -->
+        <div x-show="currentView === 'admin_dashboard'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+            <div class="bg-gradient-to-r from-amber-600 to-orange-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex items-center justify-between">
+                <div>
+                    <span class="px-3 py-1 bg-white/20 text-xs font-bold rounded-full border border-white/30 backdrop-blur-md">
+                        SUPER ADMIN CONTROL PANEL
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mt-2">ศูนย์ตรวจสอบคำขออนุมัติ (Pending Request Review)</h2>
+                    <p class="text-amber-100 text-xs sm:text-sm mt-1">อนุมัติหรือปฏิเสธรายการเพิ่ม/แก้ไขข้อมูลจากเจ้าของโฮมสเตย์ก่อนแสดงผลสาธารณะ</p>
+                </div>
+                <div class="text-center bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20">
+                    <span class="text-2xl font-black block" x-text="pendingApprovals.length"></span>
+                    <span class="text-[11px] text-amber-100 uppercase tracking-wider">คำขอที่รออนุมัติ</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-500 mr-2"></i> รายการคำขอแก้ไขข้อมูลรอการตรวจสอบ
+                </h3>
+
+                <template x-if="pendingApprovals.length === 0">
+                    <div class="text-center py-12 border border-dashed border-slate-200 rounded-2xl">
+                        <i class="fa-solid fa-circle-check text-4xl text-emerald-400 mb-2"></i>
+                        <h4 class="text-base font-bold text-slate-700">ไม่มีคำขอที่รอการอนุมัติในขณะนี้</h4>
+                        <p class="text-xs text-slate-500">ข้อมูลทั้งหมดในระบบได้รับการอนุมัติและแสดงผลเป็นปัจจุบันแล้ว</p>
+                    </div>
+                </template>
+
+                <div class="space-y-4">
+                    <template x-for="req in pendingApprovals" :key="req.id">
+                        <div class="border border-amber-200 bg-amber-50/30 rounded-2xl p-5 space-y-4">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-amber-200/60">
+                                <div>
+                                    <span class="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded" x-text="'คำขอ ID: #' + req.id"></span>
+                                    <span class="text-xs text-slate-500 ml-2" x-text="'ยื่นคำขอเมื่อ: ' + req.timestamp"></span>
+                                    <h4 class="text-base font-bold text-slate-800 mt-1" x-text="'โฮมสเตย์: ' + req.homestayName"></h4>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200" x-text="'โดยเจ้าของ: ' + req.submittedBy"></span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                                    <span class="font-bold text-slate-400 uppercase tracking-wider block">📌 ข้อมูลเดิม (ปัจจุบัน):</span>
+                                    <div><span class="font-semibold text-slate-600">ราคา:</span> ฿<span x-text="req.originalData.pricePerNight"></span> /คืน</div>
+                                    <div><span class="font-semibold text-slate-600">จังหวัด:</span> <span x-text="req.originalData.province"></span></div>
+                                    <div><span class="font-semibold text-slate-600">รายละเอียด:</span> <span class="text-slate-500 line-clamp-2" x-text="req.originalData.description"></span></div>
+                                    <div>
+                                        <span class="font-semibold text-slate-600 block mb-1">กิจกรรมเด่น:</span>
+                                        <div class="flex flex-wrap gap-1">
+                                            <template x-for="a in req.originalData.activities" :key="a">
+                                                <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]" x-text="a"></span>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                                    <div class="p-4 bg-slate-50 rounded-xl space-y-2 border border-slate-200">
-                                        <span class="font-bold text-slate-800 block text-sm">การตั้งค่าห้องพัก & ราคา</span>
-                                        <p class="text-slate-600">ราคา/คืน: <strong class="text-emerald-600">฿<span x-text="currentHostHomestay.pricePerNight.toLocaleString()"></span></strong></p>
-                                        <p class="text-slate-600">จำนวนห้องทั้งหมด: <strong x-text="`${currentHostHomestay.totalRooms} ห้อง`"></strong></p>
-                                        <p class="text-slate-600">ห้องว่างปัจจุบัน: <strong class="text-amber-600" x-text="`${currentHostHomestay.availableRooms} ห้อง`"></strong></p>
-                                    </div>
-
-                                    <div class="p-4 bg-slate-50 rounded-xl space-y-2 border border-slate-200">
-                                        <span class="font-bold text-slate-800 block text-sm">แท็กไฮไลท์ที่พัก</span>
+                                <div class="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-200 space-y-2">
+                                    <span class="font-bold text-emerald-700 uppercase tracking-wider block">✨ ข้อมูลขอเปลี่ยนแปลงใหม่:</span>
+                                    <div><span class="font-semibold text-slate-600">ราคาใหม่:</span> <span class="font-bold text-emerald-700">฿<span x-text="req.newData.pricePerNight"></span></span> /คืน</div>
+                                    <div><span class="font-semibold text-slate-600">จังหวัดใหม่:</span> <span class="font-bold text-emerald-700" x-text="req.newData.province"></span></div>
+                                    <div><span class="font-semibold text-slate-600">รายละเอียดใหม่:</span> <span class="text-slate-700 font-medium" x-text="req.newData.description"></span></div>
+                                    <div>
+                                        <span class="font-semibold text-slate-600 block mb-1">กิจกรรมเด่นใหม่:</span>
                                         <div class="flex flex-wrap gap-1">
-                                            <template x-for="tag in currentHostHomestay.tags" :key="tag">
-                                                <span class="bg-emerald-100 text-emerald-800 font-medium px-2.5 py-1 rounded-lg text-xs" x-text="tag"></span>
+                                            <template x-for="a in req.newData.activities" :key="a">
+                                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold text-[10px]" x-text="a"></span>
                                             </template>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </template>
-                    </div>
 
-                    <!-- HOST TAB 3: COMMUNITY ACTIVITIES (HOST SCOPED) -->
-                    <div x-show="hostTab === 'activities'" class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-900">จัดการกิจกรรมท่องเที่ยวชุมชนของฉัน</h2>
-                                <p class="text-xs text-slate-500">เพิ่ม แก้ไข หรืออัปเดตที่นั่งว่างกิจกรรมในโฮมสเตย์คุณ</p>
-                            </div>
-                            <button @click="openAdminModal('activity', 'add')" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow flex items-center space-x-1.5">
-                                <i class="fa-solid fa-plus"></i>
-                                <span>เพิ่มกิจกรรมใหม่</span>
-                            </button>
-                        </div>
-
-                        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs text-slate-600">
-                                    <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                                        <tr>
-                                            <th class="p-3.5">กิจกรรม</th>
-                                            <th class="p-3.5">ระยะเวลา</th>
-                                            <th class="p-3.5">ราคา/ท่าน</th>
-                                            <th class="p-3.5">ที่นั่งว่าง / ทั้งหมด</th>
-                                            <th class="p-3.5 text-center">จัดการ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <template x-for="act in currentHostActivities" :key="act.id">
-                                            <tr class="hover:bg-slate-50 transition">
-                                                <td class="p-3.5 flex items-center space-x-3">
-                                                    <img :src="act.image" class="w-12 h-12 rounded-lg object-cover shrink-0" onerror="this.src='https://images.unsplash.com/photo-1544717305-2782549b5136?w=800'">
-                                                    <div>
-                                                        <div class="font-bold text-slate-900" x-text="act.title"></div>
-                                                        <div class="text-[10px] text-slate-400" x-text="act.location"></div>
-                                                    </div>
-                                                </td>
-                                                <td class="p-3.5" x-text="act.duration"></td>
-                                                <td class="p-3.5 font-semibold text-teal-600" x-text="`฿${act.pricePerPerson.toLocaleString()}`"></td>
-                                                <td class="p-3.5">
-                                                    <span :class="act.availableSeats > 0 ? 'text-teal-600 font-bold' : 'text-rose-600 font-bold'" x-text="`${act.availableSeats} / ${act.totalSeats} ที่`"></span>
-                                                </td>
-                                                <td class="p-3.5 text-center space-x-2">
-                                                    <button @click="openAdminModal('activity', 'edit', act)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="แก้ไข">
-                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                    </button>
-                                                    <button @click="deleteItem('activity', act.id)" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="ลบ">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
+                            <div class="flex justify-end space-x-3 pt-2">
+                                <button @click="rejectApproval(req.id)" class="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold rounded-xl transition-all flex items-center">
+                                    <i class="fa-solid fa-xmark mr-1.5"></i> ปฏิเสธคำขอ (Reject)
+                                </button>
+                                <button @click="approveApproval(req.id)" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center">
+                                    <i class="fa-solid fa-check mr-1.5"></i> อนุมัติ (Approve & Publish)
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- HOST TAB 4: BOOKINGS INCOMING -->
-                    <div x-show="hostTab === 'bookings'" class="space-y-4">
-                        <h2 class="text-xl font-bold text-slate-900">รายการสั่งจองของลูกค้า (Incoming Bookings)</h2>
-
-                        <template x-if="currentHostBookings.length === 0">
-                            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
-                                <p class="text-xs font-semibold">ยังไม่มีรายการสั่งจองเข้ามายังโฮมสเตย์นี้</p>
-                            </div>
-                        </template>
-
-                        <div class="space-y-3">
-                            <template x-for="bk in currentHostBookings" :key="bk.id">
-                                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-mono text-slate-400 font-semibold" x-text="`#${bk.id}`"></span>
-                                            <span class="font-bold text-slate-900 text-sm" x-text="bk.itemName"></span>
-                                        </div>
-                                        <p class="text-slate-500" x-text="`ผู้จอง: คุณนักท่องเที่ยว | วันที่: ${bk.date} | รายละเอียด: ${bk.details}`"></p>
-                                    </div>
-                                    <div class="flex items-center justify-between sm:justify-end space-x-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                                        <div class="text-right">
-                                            <span class="text-[10px] text-slate-400 block">ยอดรวม</span>
-                                            <span class="font-bold text-emerald-600 text-sm">฿<span x-text="bk.totalPrice.toLocaleString()"></span></span>
-                                        </div>
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800" x-text="bk.status"></span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
+                    </template>
                 </div>
-
             </div>
-        </template>
-
-        <!-- ROLE 3: SUPER ADMIN -->
-        <template x-if="currentRole === 'admin'">
-            <div class="flex-1 bg-slate-100 flex flex-col md:flex-row">
-                
-                <!-- ADMIN SIDEBAR -->
-                <aside class="w-full md:w-64 bg-slate-900 text-slate-300 p-5 shrink-0 border-r border-slate-800 space-y-6">
-                    <div class="flex items-center space-x-3 px-2 border-b border-slate-800 pb-4">
-                        <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl">
-                            <i class="fa-solid fa-user-shield"></i>
-                        </div>
-                        <div>
-                            <h2 class="font-bold text-white text-sm">Super Admin System</h2>
-                            <p class="text-[11px] text-purple-300">ควบคุม 77 จังหวัดทั่วไทย</p>
-                        </div>
-                    </div>
-
-                    <nav class="space-y-1 text-xs font-semibold">
-                        <button @click="adminTab = 'dashboard'" :class="adminTab === 'dashboard' ? 'bg-purple-600 text-white' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-chart-line w-4 text-base"></i>
-                            <span>ภาพรวมทั้งประเทศ</span>
-                        </button>
-                        <button @click="adminTab = 'homestays'" :class="adminTab === 'homestays' ? 'bg-purple-600 text-white' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-house-chimney-window w-4 text-base"></i>
-                            <span>อนุมัติ & จัดการโฮมสเตย์ทั้งหมด</span>
-                        </button>
-                        <button @click="adminTab = 'activities'" :class="adminTab === 'activities' ? 'bg-purple-600 text-white' : 'hover:bg-slate-800 text-slate-300'" class="w-full text-left px-3.5 py-3 rounded-xl transition flex items-center space-x-3">
-                            <i class="fa-solid fa-person-hiking w-4 text-base"></i>
-                            <span>จัดการกิจกรรมทุกชุมชน</span>
-                        </button>
-                    </nav>
-
-                    <div class="pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-1">
-                        <p>สถานะระบบ: <span class="text-emerald-400 font-bold">ออนไลน์ (77 Provinces)</span></p>
-                        <p>จำนวนโฮมสเตย์รวม: <span class="text-amber-400 font-bold" x-text="`${homestays.length} แห่ง`"></span></p>
-                    </div>
-                </aside>
-
-                <!-- SUPER ADMIN MAIN CONTENT -->
-                <div class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
-
-                    <!-- ADMIN TAB 1: NATIONWIDE DASHBOARD -->
-                    <div x-show="adminTab === 'dashboard'" class="space-y-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900">สรุปภาพรวมโฮมสเตย์ไทย 77 จังหวัด (Nationwide Dashboard)</h2>
-                            <p class="text-xs text-slate-500">รวมสถิติตัวเลข รายได้ และความจุรวมทุกโฮมสเตย์ในระบบ</p>
-                        </div>
-
-                        <!-- METRICS CARDS -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs text-slate-500 font-medium block">ผู้ใช้งานทั่วประเทศ</span>
-                                    <div class="text-2xl font-bold text-slate-900" x-text="dashboardStats.dailyUsers.toLocaleString()"></div>
-                                </div>
-                                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl">
-                                    <i class="fa-solid fa-users"></i>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs text-slate-500 font-medium block">โฮมสเตย์ในระบบ</span>
-                                    <div class="text-2xl font-bold text-slate-900" x-text="`${homestays.length} แห่ง`"></div>
-                                </div>
-                                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl">
-                                    <i class="fa-solid fa-house-user"></i>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs text-slate-500 font-medium block">กิจกรรมชุมชนเปิดบริการ</span>
-                                    <div class="text-2xl font-bold text-slate-900" x-text="`${activities.length} กิจกรรม`"></div>
-                                </div>
-                                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-xl">
-                                    <i class="fa-solid fa-person-hiking"></i>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs text-slate-500 font-medium block">รายได้หมุนเวียนรวม</span>
-                                    <div class="text-2xl font-bold text-emerald-600">฿<span x-text="dashboardStats.totalRevenue.toLocaleString()"></span></div>
-                                </div>
-                                <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-xl">
-                                    <i class="fa-solid fa-sack-dollar"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CAPACITY MONITORING -->
-                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                                <i class="fa-solid fa-hotel text-purple-600"></i> ตรวจสอบสถานะความจุห้องพักทุกโฮมสเตย์
-                            </h3>
-                            <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                                <template x-for="item in homestays" :key="item.id">
-                                    <div class="py-3 flex justify-between items-center text-xs">
-                                        <div>
-                                            <div class="font-bold text-slate-800" x-text="item.title"></div>
-                                            <div class="text-slate-400" x-text="`เจ้าของ: ${item.ownerName} | จังหวัด: ${item.province}`"></div>
-                                        </div>
-                                        <div class="text-right">
-                                            <div :class="item.availableRooms > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'" x-text="`ว่าง ${item.availableRooms} / ${item.totalRooms} ห้อง`"></div>
-                                            <div class="w-28 bg-slate-100 h-2 rounded-full overflow-hidden mt-1 ml-auto">
-                                                <div class="h-full bg-emerald-500" :style="`width: ${(item.availableRooms / item.totalRooms) * 100}%`"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ADMIN TAB 2: HOMESTAYS CRUD -->
-                    <div x-show="adminTab === 'homestays'" class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-900">จัดการโฮมสเตย์ทั้งหมด (Super Admin CRUD)</h2>
-                                <p class="text-xs text-slate-500">สามารถเพิ่ม แก้ไข ลบ โฮมสเตย์ได้ทุกจังหวัด</p>
-                            </div>
-                            <button @click="openAdminModal('homestay', 'add')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow flex items-center space-x-1.5">
-                                <i class="fa-solid fa-plus"></i>
-                                <span>เพิ่มโฮมสเตย์ใหม่</span>
-                            </button>
-                        </div>
-
-                        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs text-slate-600">
-                                    <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                                        <tr>
-                                            <th class="p-3.5">รูป & ชื่อโฮมสเตย์</th>
-                                            <th class="p-3.5">เจ้าของ</th>
-                                            <th class="p-3.5">จังหวัด</th>
-                                            <th class="p-3.5">ราคา/คืน</th>
-                                            <th class="p-3.5">ห้องว่าง / ทั้งหมด</th>
-                                            <th class="p-3.5 text-center">จัดการ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <template x-for="item in homestays" :key="item.id">
-                                            <tr class="hover:bg-slate-50 transition">
-                                                <td class="p-3.5 flex items-center space-x-3">
-                                                    <img :src="item.image" class="w-12 h-12 rounded-lg object-cover" onerror="this.src='https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800'">
-                                                    <div>
-                                                        <div class="font-bold text-slate-900" x-text="item.title"></div>
-                                                        <div class="text-[10px] text-slate-400" x-text="`Rating: ${item.rating} ⭐`"></div>
-                                                    </div>
-                                                </td>
-                                                <td class="p-3.5 font-semibold text-slate-800" x-text="item.ownerName"></td>
-                                                <td class="p-3.5 font-bold text-emerald-700" x-text="item.province"></td>
-                                                <td class="p-3.5 font-semibold text-emerald-600" x-text="`฿${item.pricePerNight.toLocaleString()}`"></td>
-                                                <td class="p-3.5">
-                                                    <span :class="item.availableRooms > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'" x-text="`${item.availableRooms} / ${item.totalRooms} ห้อง`"></span>
-                                                </td>
-                                                <td class="p-3.5 text-center space-x-2">
-                                                    <button @click="openAdminModal('homestay', 'edit', item)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="แก้ไข">
-                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                    </button>
-                                                    <button @click="deleteItem('homestay', item.id)" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="ลบ">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ADMIN TAB 3: ACTIVITIES CRUD -->
-                    <div x-show="adminTab === 'activities'" class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-900">จัดการกิจกรรมชุมชนทั้งหมด</h2>
-                                <p class="text-xs text-slate-500">จัดการรายการกิจกรรมประจำโฮมสเตย์ได้ทุกแห่ง</p>
-                            </div>
-                            <button @click="openAdminModal('activity', 'add')" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow flex items-center space-x-1.5">
-                                <i class="fa-solid fa-plus"></i>
-                                <span>เพิ่มกิจกรรมใหม่</span>
-                            </button>
-                        </div>
-
-                        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs text-slate-600">
-                                    <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                                        <tr>
-                                            <th class="p-3.5">กิจกรรม</th>
-                                            <th class="p-3.5">โฮมสเตย์สังกัด</th>
-                                            <th class="p-3.5">ราคา/ท่าน</th>
-                                            <th class="p-3.5">ที่นั่งว่าง / ทั้งหมด</th>
-                                            <th class="p-3.5 text-center">จัดการ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <template x-for="act in activities" :key="act.id">
-                                            <tr class="hover:bg-slate-50 transition">
-                                                <td class="p-3.5 flex items-center space-x-3">
-                                                    <img :src="act.image" class="w-12 h-12 rounded-lg object-cover" onerror="this.src='https://images.unsplash.com/photo-1544717305-2782549b5136?w=800'">
-                                                    <div>
-                                                        <div class="font-bold text-slate-900" x-text="act.title"></div>
-                                                        <div class="text-[10px] text-slate-400" x-text="act.location"></div>
-                                                    </div>
-                                                </td>
-                                                <td class="p-3.5 font-medium text-emerald-700" x-text="getHomestayTitleById(act.homestayId)"></td>
-                                                <td class="p-3.5 font-semibold text-teal-600" x-text="`฿${act.pricePerPerson.toLocaleString()}`"></td>
-                                                <td class="p-3.5">
-                                                    <span :class="act.availableSeats > 0 ? 'text-teal-600 font-bold' : 'text-rose-600 font-bold'" x-text="`${act.availableSeats} / ${act.totalSeats} ที่`"></span>
-                                                </td>
-                                                <td class="p-3.5 text-center space-x-2">
-                                                    <button @click="openAdminModal('activity', 'edit', act)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="แก้ไข">
-                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                    </button>
-                                                    <button @click="deleteItem('activity', act.id)" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="ลบ">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-        </template>
+        </div>
 
     </main>
 
-    <!-- 1. USER BOOKING MODAL -->
-    <div x-show="showBookingModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition>
-        <div @click.away="showBookingModal = false" class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-            
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-check text-emerald-600"></i>
-                    <span x-text="bookingType === 'homestay' ? 'ยืนยันการจองห้องพักโฮมสเตย์' : 'ยืนยันการจองกิจกรรมชุมชน'"></span>
-                </h3>
-                <button @click="showBookingModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- ==================== MODALS CONTAINER ==================== -->
+
+    <!-- 1. LOGIN MODAL -->
+    <div x-show="showLoginModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div @click.outside="showLoginModal = false" class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative space-y-6">
+            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-user-lock"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800">เข้าสู่ระบบ PAKJAI</h3>
+                <p class="text-xs text-slate-500">สำหรับเจ้าของโฮมสเตย์ และผู้ดูแลระบบ (Super Admin)</p>
             </div>
 
-            <template x-if="selectedItem">
-                <div class="space-y-4 text-xs text-slate-700">
-                    <div class="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                        <img :src="selectedItem.image" class="w-16 h-16 rounded-xl object-cover shrink-0">
-                        <div>
-                            <h4 class="font-bold text-slate-900 text-sm" x-text="selectedItem.title"></h4>
-                            <p class="text-[11px] text-slate-500" x-text="`${selectedItem.location}`"></p>
-                        </div>
-                    </div>
+            <form @submit.prevent="handleLogin()" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อผู้ใช้งาน (Username / ID):</label>
+                    <input type="text" x-model="loginForm.username" required placeholder="เช่น owner_chiangmai หรือ admin" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+                </div>
 
-                    <template x-if="bookingType === 'homestay'">
-                        <div class="space-y-3">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-500 mb-1">จำนวนคืนที่เข้าพัก</label>
-                                    <input type="number" min="1" x-model.number="bookingForm.nights" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-500 mb-1">จำนวนห้องพัก</label>
-                                    <input type="number" min="1" :max="selectedItem.availableRooms" x-model.number="bookingForm.rooms" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-slate-500 mb-1">วันที่เริ่มเข้าพัก</label>
-                                <input type="date" x-model="bookingForm.checkInDate" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
-                            </div>
-                        </div>
-                    </template>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน (Password / Pin):</label>
+                    <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+                </div>
 
-                    <template x-if="bookingType === 'activity'">
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-slate-500 mb-1">จำนวนผู้เข้าร่วม (ท่าน)</label>
-                                <input type="number" min="1" :max="selectedItem.availableSeats" x-model.number="bookingForm.persons" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-slate-500 mb-1">วันที่ทำกิจกรรม</label>
-                                <input type="date" x-model="bookingForm.activityDate" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none">
-                            </div>
-                        </div>
-                    </template>
+                <template x-if="loginError">
+                    <p class="text-xs text-rose-600 font-semibold" x-text="loginError"></p>
+                </template>
 
-                    <!-- Summary Price -->
-                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
-                        <div class="flex justify-between text-slate-600">
-                            <span>อัตราค่าบริการ</span>
-                            <span x-text="bookingType === 'homestay' ? `฿${selectedItem.pricePerNight.toLocaleString()} / คืน` : `฿${selectedItem.pricePerPerson.toLocaleString()} / ท่าน`"></span>
-                        </div>
-                        <div class="border-t border-emerald-200 pt-2 flex justify-between items-center font-bold text-sm text-emerald-950">
-                            <span>ยอดชำระเงินสุทธิ</span>
-                            <span class="text-lg text-emerald-700">฿<span x-text="calculatedTotalPrice.toLocaleString()"></span></span>
-                        </div>
-                    </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all">
+                    เข้าสู่ระบบ
+                </button>
+            </form>
 
-                    <button @click="processBookingSubmit()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg text-sm transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <span>ยืนยันการจองและชำระเงิน</span>
+            <div class="pt-4 border-t border-slate-100 space-y-2 text-[11px] text-slate-500">
+                <p class="font-bold text-slate-600">บัญชีทดสอบสำหรับล็อกอิน:</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button @click="loginForm.username = 'owner_chiangmai'; loginForm.password = '1234'" class="p-2 bg-slate-50 hover:bg-emerald-50 rounded-lg border border-slate-200 text-left">
+                        <span class="font-bold block text-slate-700">เจ้าของเชียงใหม่</span>
+                        <span class="text-[10px] text-slate-400">owner_chiangmai / 1234</span>
                     </button>
+                    <button @click="loginForm.username = 'admin'; loginForm.password = '1234'" class="p-2 bg-slate-50 hover:bg-amber-50 rounded-lg border border-slate-200 text-left">
+                        <span class="font-bold block text-amber-700">Super Admin</span>
+                        <span class="text-[10px] text-slate-400">admin / 1234</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. HOMESTAY DETAIL & BOOKING MODAL -->
+    <div x-show="showDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        <div @click.outside="showDetailModal = false" class="bg-white rounded-3xl max-w-3xl w-full my-8 shadow-2xl border border-slate-100 overflow-hidden relative">
+            <button @click="showDetailModal = false" class="absolute top-4 right-4 z-10 text-slate-600 bg-white/80 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <template x-if="activeHomestay">
+                <div class="space-y-6">
+                    <div class="relative h-64 sm:h-80 bg-slate-100">
+                        <img :src="activeHomestay.image" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-6">
+                            <div class="text-white space-y-1">
+                                <span class="px-2.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-lg" x-text="activeHomestay.province"></span>
+                                <h2 class="text-2xl sm:text-3xl font-extrabold" x-text="activeHomestay.name"></h2>
+                                <p class="text-xs text-slate-200" x-text="activeHomestay.region + ' • ' + activeHomestay.district"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="md:col-span-2 space-y-4">
+                                <h3 class="text-base font-bold text-slate-800">เรื่องราวเกี่ยวกับโฮมสเตย์</h3>
+                                <p class="text-xs text-slate-600 leading-relaxed" x-text="activeHomestay.description"></p>
+
+                                <div class="space-y-2 pt-2">
+                                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">🌿 กิจกรรมไฮไลท์ที่คุณจะได้สัมผัส:</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <template x-for="act in activeHomestay.activities" :key="act">
+                                            <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs font-semibold text-emerald-800 flex items-center">
+                                                <i class="fa-solid fa-star text-amber-500 mr-2"></i>
+                                                <span x-text="act"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 h-fit">
+                                <div class="text-center pb-3 border-b border-slate-200">
+                                    <span class="text-xs text-slate-400">ราคาที่พักต่อคืน</span>
+                                    <div class="text-2xl font-extrabold text-emerald-700">
+                                        ฿<span x-text="activeHomestay.pricePerNight.toLocaleString()"></span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">วันที่เข้าพัก:</label>
+                                        <input type="date" x-model="bookingForm.checkIn" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">จำนวนคืน:</label>
+                                        <input type="number" min="1" x-model.number="bookingForm.nights" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">จำนวนผู้เข้าพัก:</label>
+                                        <input type="number" min="1" x-model.number="bookingForm.guests" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs">
+                                    </div>
+
+                                    <div class="pt-2 border-t border-slate-200 flex justify-between font-bold text-sm text-slate-800">
+                                        <span>ราคารวมทั้งสิ้น:</span>
+                                        <span class="text-emerald-700">฿<span x-text="(activeHomestay.pricePerNight * (bookingForm.nights || 1)).toLocaleString()"></span></span>
+                                    </div>
+
+                                    <button @click="processBooking()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all">
+                                        ยืนยันการจองห้องพัก
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-slate-200 space-y-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center justify-between">
+                                <span>รีวิวจากผู้เข้าพัก (<span x-text="activeHomestay.reviews.length"></span>)</span>
+                                <span class="text-amber-500 text-sm font-bold"><i class="fa-solid fa-star"></i> <span x-text="activeHomestay.rating"></span></span>
+                            </h3>
+
+                            <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                                <template x-for="rev in activeHomestay.reviews" :key="rev.id">
+                                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="font-bold text-slate-700" x-text="rev.userName"></span>
+                                            <span class="text-amber-500 font-bold"><i class="fa-solid fa-star text-[10px]"></i> <span x-text="rev.rating"></span></span>
+                                        </div>
+                                        <p class="text-xs text-slate-600" x-text="rev.comment"></p>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-3">
+                                <span class="text-xs font-bold text-emerald-800 block">เขียนรีวิวความประทับใจ:</span>
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-xs text-slate-600">ให้คะแนน:</label>
+                                    <select x-model.number="newReview.rating" class="p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-500">
+                                        <option value="5">⭐⭐⭐⭐⭐ 5 ดาว</option>
+                                        <option value="4">⭐⭐⭐⭐ 4 ดาว</option>
+                                        <option value="3">⭐⭐⭐ 3 ดาว</option>
+                                    </select>
+                                </div>
+                                <input type="text" x-model="newReview.comment" placeholder="เล่าประสบการณ์ของคุณที่นี่..." class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs">
+                                <button @click="submitReview()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all">
+                                    ส่งรีวิว
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 3. MY BOOKINGS MODAL -->
+    <div x-show="showMyBookingsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div @click.outside="showMyBookingsModal = false" class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative space-y-4">
+            <button @click="showMyBookingsModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h3 class="text-xl font-bold text-slate-800 flex items-center">
+                <i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i> รายการจองของฉัน
+            </h3>
+
+            <template x-if="userBookings.length === 0">
+                <div class="text-center py-8 text-slate-400 text-xs">
+                    ยังไม่มีรายการจองโฮมสเตย์ในขณะนี้
                 </div>
             </template>
 
-        </div>
-    </div>
-
-    <!-- 2. USER REVIEW MODAL -->
-    <div x-show="showReviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition>
-        <div @click.away="showReviewModal = false" class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-900 text-base">รีวิวประสบการณ์โฮมสเตย์</h3>
-                <button @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-
-            <div class="space-y-4 text-xs">
-                <div class="text-center space-y-2">
-                    <span class="text-slate-500">ความพึงพอใจการบริการ</span>
-                    <div class="flex justify-center space-x-2 text-2xl text-amber-400 cursor-pointer">
-                        <template x-for="star in [1,2,3,4,5]" :key="star">
-                            <i @click="reviewForm.rating = star" :class="star <= reviewForm.rating ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
-                        </template>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-slate-500 mb-1">ข้อคิดเห็นและรีวิวของคุณ</label>
-                    <textarea x-model="reviewForm.comment" rows="3" placeholder="ความประทับใจ การต้อนรับของเจ้าของโฮมสเตย์..." class="w-full p-3 border rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
-                </div>
-
-                <button @click="submitReview()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl shadow text-xs transition">
-                    ส่งรีวิวประสบการณ์
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. HOST / ADMIN ADD OR EDIT MODAL -->
-    <div x-show="showAdminModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition>
-        <div @click.away="showAdminModal = false" class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-900 text-base" x-text="`${adminModalAction === 'add' ? 'เพิ่ม' : 'แก้ไข'}ข้อมูล ${adminModalType === 'homestay' ? 'โฮมสเตย์' : 'กิจกรรมชุมชน'}`"></h3>
-                <button @click="showAdminModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-
-            <form @submit.prevent="saveAdminItem()" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-medium text-slate-700 mb-1">ชื่อรายการ</label>
-                    <input type="text" x-model="adminForm.title" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <template x-if="adminModalType === 'homestay'">
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1">ชื่อเจ้าของ / ผู้ติดต่อ</label>
-                        <input type="text" x-model="adminForm.ownerName" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+            <div class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                <template x-for="b in userBookings" :key="b.id">
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-slate-800 text-sm" x-text="b.homestayName"></h4>
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded" x-text="b.status"></span>
+                        </div>
+                        <p class="text-xs text-slate-500" x-text="'วันที่เข้าพัก: ' + b.checkIn + ' (' + b.nights + ' คืน)'"></p>
+                        <p class="text-xs font-bold text-emerald-700" x-text="'ราคารวม: ฿' + b.totalPrice.toLocaleString()"></p>
                     </div>
                 </template>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1">จังหวัด</label>
-                        <select x-model="adminForm.province" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                            <template x-for="p in all77Provinces" :key="p">
-                                <option :value="p" x-text="p"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1">สถานที่ / อำเภอ</label>
-                        <input type="text" x-model="adminForm.location" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                </div>
-
-                <template x-if="adminModalType === 'activity'">
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1">สังกัดโฮมสเตย์</label>
-                        <select x-model.number="adminForm.homestayId" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-teal-500">
-                            <template x-for="h in homestays" :key="h.id">
-                                <option :value="h.id" x-text="`${h.title} (${h.province})`"></option>
-                            </template>
-                        </select>
-                    </div>
-                </template>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1" x-text="adminModalType === 'homestay' ? 'ราคา/คืน (บาท)' : 'ราคา/ท่าน (บาท)'"></label>
-                        <input type="number" x-model.number="adminForm.price" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block font-medium text-slate-700 mb-1" x-text="adminModalType === 'homestay' ? 'จำนวนห้องรวม' : 'จำนวนที่นั่งรวม'"></label>
-                        <input type="number" x-model.number="adminForm.totalCapacity" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-medium text-slate-700 mb-1" x-text="adminModalType === 'homestay' ? 'ห้องว่างคงเหลือ' : 'ที่นั่งว่างคงเหลือ'"></label>
-                    <input type="number" x-model.number="adminForm.availableCapacity" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-slate-700 mb-1">URL รูปภาพ (Unsplash)</label>
-                    <input type="url" x-model="adminForm.image" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-slate-700 mb-1">รายละเอียดสังเขป</label>
-                    <textarea x-model="adminForm.description" rows="3" required class="w-full px-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
-                </div>
-
-                <div class="pt-2 flex justify-end space-x-2">
-                    <button type="button" @click="showAdminModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-medium">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow">บันทึกข้อมูล</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <script>
-        function pakjaiApp() {
-            return {
-                // Roles Control State
-                currentRole: 'user', // 'user' (Tourist), 'host' (Homestay Owner), 'admin' (Super Admin)
-                currentHostId: 1, // Active Host Profile ID when in 'host' role
-
-                userTab: 'explore', // 'explore', 'bookings', 'notifications'
-                hostTab: 'dashboard', // 'dashboard', 'homestays', 'activities', 'bookings'
-                adminTab: 'dashboard', // 'dashboard', 'homestays', 'activities'
-
-                // ALL 77 THAILAND PROVINCES
-                all77Provinces: [
-                    "กรุงเทพมหานคร", "กระบี่", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี", "ฉะเชิงเทรา", "ชลบุรี", "ชัยนาท", 
-                    "ชัยภูมิ", "ชุมพร", "เชียงราย", "เชียงใหม่", "ตรัง", "ตราด", "ตาก", "นครนายก", "นครปฐม", "นครพนม", 
-                    "นครราชสีมา", "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส", "น่าน", "บึงกาฬ", "บุรีรัมย์", "ปทุมธานี", "ประจวบคีรีขันธ์", 
-                    "ปราจีนบุรี", "ปัตตานี", "พระนครศรีอยุธยา", "พะเยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "เพชรบุรี", "เพชรบูรณ์", 
-                    "แพร่", "ภูเก็ต", "มหาสารคาม", "มุกดาหาร", "แม่ฮ่องสอน", "ยโสธร", "ยะลา", "ร้อยเอ็ด", "ระนอง", "ระยอง", 
-                    "ราชบุรี", "ลพบุรี", "ลำปาง", "ลำพูน", "เลย", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สตูล", "สมุทรปราการ", 
-                    "สมุทรสงคราม", "สมุทรสาคร", "สระแก้ว", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "สุราษฎร์ธานี", "สุรินทร์", "หนองคาย", 
-                    "หนองบัวลำภู", "อ่างทอง", "อำนาจเจริญ", "อุดรธานี", "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี"
-                ],
-
-                selectedProvince: 'สมุทรสงคราม',
-                selectedHomestay: null,
-                searchQuery: '',
-
-                // Modal Control States
-                showBookingModal: false,
-                bookingType: 'homestay',
-                selectedItem: null,
-                bookingForm: {
-                    nights: 1,
-                    rooms: 1,
-                    persons: 1,
-                    checkInDate: new Date().toISOString().split('T')[0],
-                    activityDate: new Date().toISOString().split('T')[0]
-                },
-
-                showReviewModal: false,
-                selectedBookingForReview: null,
-                reviewForm: {
-                    rating: 5,
-                    comment: ''
-                },
-
-                showAdminModal: false,
-                adminModalType: 'homestay',
-                adminModalAction: 'add',
-                adminEditingId: null,
-                adminForm: {
-                    title: '',
-                    ownerName: '',
-                    province: 'สมุทรสงคราม',
-                    location: '',
-                    homestayId: null,
-                    price: 0,
-                    totalCapacity: 5,
-                    availableCapacity: 5,
-                    image: '',
-                    description: ''
-                },
-
-                // DATA STORE: HOMESTAYS WITH OWNER/HOST DATA
-                homestays: [
-                    {
-                        id: 1,
-                        ownerName: 'แม่ชุม สมุทรสงคราม',
-                        title: 'บ้านเรือนไทย โฮมสเตย์ อัมพวา',
-                        province: 'สมุทรสงคราม',
-                        location: 'อัมพวา, สมุทรสงคราม',
-                        description: 'โฮมสเตย์เรือนไม้โบราณริมคลอง สัมผัสวิถีชีวิตริมน้ำ พายเรือตักบาตรเช้า และชมหิ่งห้อยยามค่ำคืน',
-                        pricePerNight: 1200,
-                        rating: 4.9,
-                        reviewsCount: 38,
-                        totalRooms: 6,
-                        availableRooms: 3,
-                        tags: ['ริมน้ำ', 'รวมอาหารเช้า', 'ตักบาตรทางเรือ'],
-                        image: 'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800'
-                    },
-                    {
-                        id: 2,
-                        ownerName: 'พ่อสมพงษ์ ม่อนแจ่ม',
-                        title: 'กระท่อมม่อนแจ่ม วิวสายหมอก',
-                        province: 'เชียงใหม่',
-                        location: 'แม่ริม, เชียงใหม่',
-                        description: 'พักผ่อนกลางแปลงดอกไม้ ชมทะเลหมอกยามเช้า อากาศเย็นสบายตลอดปี พร้อมหมูกระทะบนยอดดอย',
-                        pricePerNight: 1800,
-                        rating: 4.8,
-                        reviewsCount: 52,
-                        totalRooms: 8,
-                        availableRooms: 2,
-                        tags: ['วิวภูเขา', 'ทะเลหมอก', 'หมูกระทะ'],
-                        image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800'
-                    },
-                    {
-                        id: 3,
-                        ownerName: 'ลุงโชค คีรีวง',
-                        title: 'บ้านสวนโฮมสเตย์ วิถีชาวสวนคีรีวง',
-                        province: 'นครศรีธรรมราช',
-                        location: 'ลานสกา, นครศรีธรรมราช',
-                        description: 'สูดอากาศบริสุทธิ์ที่สุดในประเทศไทย เล่นน้ำตกธรรมชาติ พักผ่อนในสวนผลไม้ตามฤดูกาล',
-                        pricePerNight: 950,
-                        rating: 4.9,
-                        reviewsCount: 29,
-                        totalRooms: 5,
-                        availableRooms: 4,
-                        tags: ['อากาศดีที่สุด', 'น้ำตก', 'ผ้ามัดย้อม'],
-                        image: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=800'
-                    },
-                    {
-                        id: 4,
-                        ownerName: 'ป้าจันทร์ น่าน',
-                        title: 'ตูบนา โฮมสเตย์ ปัว',
-                        province: 'น่าน',
-                        location: 'ปัว, น่าน',
-                        description: 'นอนชมวิวทุ่งนาสีเขียวขจีและดอยภูคา ชิมอาหารพื้นเมืองน่าน บรรยากาศเงียบสงบเหมาะแก่การพักผ่อน',
-                        pricePerNight: 1400,
-                        rating: 4.9,
-                        reviewsCount: 45,
-                        totalRooms: 7,
-                        availableRooms: 3,
-                        tags: ['วิวทุ่งนา', 'อาหารขันโตก', 'ดอยภูคา'],
-                        image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800'
-                    }
-                ],
-
-                // ACTIVITIES DATA (LINKED TO HOMESTAYS)
-                activities: [
-                    {
-                        id: 101,
-                        homestayId: 1, // แม่ชุม อัมพวา
-                        title: 'พายเรือชมสวนผลไม้ & ทำขนมไทยโบราณ',
-                        location: 'อัมพวา, สมุทรสงคราม',
-                        description: 'พายเรือท้องหยอดชมสวนส้มโอและมะพร้าว พร้อมเวิร์กชอปทำขนมทองหยิบทองหยอดกับป้าชุมชน',
-                        pricePerPerson: 350,
-                        duration: '2.5 ชั่วโมง',
-                        totalSeats: 15,
-                        availableSeats: 6,
-                        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800'
-                    },
-                    {
-                        id: 102,
-                        homestayId: 2, // พ่อสมพงษ์
-                        title: 'เก็บสตรอว์เบอร์รีสด & ทำชาดอกไม้ดอย',
-                        location: 'แม่ริม, เชียงใหม่',
-                        description: 'เดินเก็บสตรอว์เบอร์รีฉ่ำๆ จากแปลง พร้อมเรียนรู้การเบลนด์ชาดอกไม้แห้งรับประทานคู่หมูกระทะ',
-                        pricePerPerson: 400,
-                        duration: '2 ชั่วโมง',
-                        totalSeats: 20,
-                        availableSeats: 12,
-                        image: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800'
-                    },
-                    {
-                        id: 103,
-                        homestayId: 3, // ลุงโชค
-                        title: 'ทำผ้ามัดย้อมสีธรรมชาติจากเปลือกมังคุด',
-                        location: 'ลานสกา, นครศรีธรรมราช',
-                        description: 'สกัดสีจากเปลือกมังคุดคีรีวง มัดลายผ้าเช็ดหน้าหรือเสื้อยืดฝีมือตัวเองนำกลับเป็นของฝาก',
-                        pricePerPerson: 300,
-                        duration: '2 ชั่วโมง',
-                        totalSeats: 12,
-                        availableSeats: 5,
-                        image: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=800'
-                    }
-                ],
-
-                // USER BOOKINGS HISTORY
-                userBookings: [
-                    {
-                        id: 'BK-9901',
-                        homestayId: 1,
-                        itemName: 'บ้านเรือนไทย โฮมสเตย์ อัมพวา',
-                        hostName: 'แม่ชุม สมุทรสงคราม',
-                        type: 'homestay',
-                        province: 'สมุทรสงคราม',
-                        date: '12 ต.ค. 2026',
-                        details: 'เข้าพัก 1 คืน (1 ห้อง)',
-                        totalPrice: 1200,
-                        status: 'สำเร็จแล้ว',
-                        hasReviewed: false
-                    }
-                ],
-
-                // NOTIFICATIONS
-                userNotifications: [
-                    {
-                        id: 1,
-                        title: 'การจองสำเร็จ!',
-                        message: 'การจองบ้านเรือนไทย โฮมสเตย์ อัมพวา สำหรับวันที่ 12 ต.ค. เรียบร้อยแล้ว',
-                        time: '10 นาทีที่แล้ว',
-                        read: false,
-                        type: 'info'
-                    },
-                    {
-                        id: 2,
-                        title: 'เตือนวันเข้าพักโฮมสเตย์',
-                        message: 'เตรียมตัวเดินทางไปพักผ่อนวิถีชุมชนอัมพวาเร็วๆ นี้!',
-                        time: '1 ชั่วโมงที่แล้ว',
-                        read: false,
-                        type: 'reminder'
-                    }
-                ],
-
-                // COMPUTED PROPERTIES & HELPERS
-                get unreadNotificationsCount() {
-                    return this.userNotifications.filter(n => !n.read).length;
-                },
-
-                get filteredHomestays() {
-                    return this.homestays.filter(item => {
-                        const matchProvince = item.province === this.selectedProvince;
-                        const matchSearch = !this.searchQuery || 
-                            item.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            item.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-                        return matchProvince && matchSearch;
-                    });
-                },
-
-                get filteredActivities() {
-                    return this.activities.filter(act => {
-                        if (this.selectedHomestay) {
-                            return act.homestayId === this.selectedHomestay.id;
-                        }
-                        const parentHomestay = this.homestays.find(h => h.id === act.homestayId);
-                        return parentHomestay && parentHomestay.province === this.selectedProvince;
-                    });
-                },
-
-                get calculatedTotalPrice() {
-                    if (!this.selectedItem) return 0;
-                    if (this.bookingType === 'homestay') {
-                        return (this.selectedItem.pricePerNight || 0) * (this.bookingForm.nights || 1) * (this.bookingForm.rooms || 1);
-                    } else {
-                        return (this.selectedItem.pricePerPerson || 0) * (this.bookingForm.persons || 1);
-                    }
-                },
-
-                // HOST ROLE SPECIFIC SCOPED DATA
-                get currentHostHomestay() {
-                    return this.homestays.find(h => h.id === this.currentHostId) || this.homestays[0];
-                },
-
-                get currentHostActivities() {
-                    if (!this.currentHostHomestay) return [];
-                    return this.activities.filter(a => a.homestayId === this.currentHostHomestay.id);
-                },
-
-                get currentHostBookings() {
-                    if (!this.currentHostHomestay) return [];
-                    return this.userBookings.filter(b => b.homestayId === this.currentHostHomestay.id);
-                },
-
-                get hostTotalRevenue() {
-                    return this.currentHostBookings.reduce((sum, b) => sum + b.totalPrice, 0) + 3800; // base mock revenue
-                },
-
-                get dashboardStats() {
-                    const totalRevenue = this.userBookings.reduce((sum, b) => sum + b.totalPrice, 0) + 18500;
-                    return {
-                        dailyUsers: 1420,
-                        totalRevenue: totalRevenue
-                    }
-                },
-
-                // ACTIONS AND METHODS
-                switchRole(role) {
-                    this.currentRole = role;
-                    if (role === 'host' && !this.currentHostId && this.homestays.length > 0) {
-                        this.currentHostId = this.homestays[0].id;
-                    }
-                },
-
-                onHostProfileChange() {
-                    // Profile switched dynamically
-                },
-
-                onProvinceChange() {
-                    this.selectedHomestay = null;
-                },
-
-                selectHomestayForActivities(homestay) {
-                    this.selectedHomestay = homestay;
-                },
-
-                resetHomestaySelection() {
-                    this.selectedHomestay = null;
-                },
-
-                getHomestayTitleById(id) {
-                    const h = this.homestays.find(item => item.id === id);
-                    return h ? h.title : 'โฮมสเตย์ชุมชน';
-                },
-
-                markAllNotificationsAsRead() {
-                    this.userNotifications.forEach(n => n.read = true);
-                },
-
-                openBookingModal(type, item) {
-                    this.bookingType = type;
-                    this.selectedItem = item;
-                    this.bookingForm = {
-                        nights: 1,
-                        rooms: 1,
-                        persons: 1,
-                        checkInDate: new Date().toISOString().split('T')[0],
-                        activityDate: new Date().toISOString().split('T')[0]
-                    };
-                    this.showBookingModal = true;
-                },
-
-                processBookingSubmit() {
-                    if (!this.selectedItem) return;
-
-                    const newId = 'BK-' + Math.floor(1000 + Math.random() * 9000);
-                    const totalPrice = this.calculatedTotalPrice;
-
-                    // Deduct capacity
-                    if (this.bookingType === 'homestay') {
-                        this.selectedItem.availableRooms = Math.max(0, this.selectedItem.availableRooms - (this.bookingForm.rooms || 1));
-                    } else {
-                        this.selectedItem.availableSeats = Math.max(0, this.selectedItem.availableSeats - (this.bookingForm.persons || 1));
-                    }
-
-                    // Create Booking Record
-                    const newBooking = {
-                        id: newId,
-                        homestayId: this.bookingType === 'homestay' ? this.selectedItem.id : this.selectedItem.homestayId,
-                        itemName: this.selectedItem.title,
-                        hostName: this.bookingType === 'homestay' ? this.selectedItem.ownerName : 'เจ้าของโฮมสเตย์',
-                        type: this.bookingType,
-                        province: this.selectedProvince,
-                        date: this.bookingType === 'homestay' ? this.bookingForm.checkInDate : this.bookingForm.activityDate,
-                        details: this.bookingType === 'homestay' ? `${this.bookingForm.nights} คืน (${this.bookingForm.rooms} ห้อง)` : `${this.bookingForm.persons} ท่าน`,
-                        totalPrice: totalPrice,
-                        status: 'รอเข้าพัก',
-                        hasReviewed: false
-                    };
-
-                    this.userBookings.unshift(newBooking);
-
-                    // Add Notification
-                    this.userNotifications.unshift({
-                        id: Date.now(),
-                        title: 'การจองสำเร็จ!',
-                        message: `ยืนยันการจอง ${this.selectedItem.title} เรียบร้อยแล้ว ยอดชำระ ฿${totalPrice.toLocaleString()}`,
-                        time: 'เมื่อครู่นี้',
-                        read: false,
-                        type: 'info'
-                    });
-
-                    this.showBookingModal = false;
-                    this.userTab = 'bookings';
-                },
-
-                openReviewModal(booking) {
-                    this.selectedBookingForReview = booking;
-                    this.reviewForm = { rating: 5, comment: '' };
-                    this.showReviewModal = true;
-                },
-
-                submitReview() {
-                    if (this.selectedBookingForReview) {
-                        this.selectedBookingForReview.hasReviewed = true;
-                    }
-                    this.showReviewModal = false;
-                },
-
-                // ADMIN / HOST CRUD METHODS
-                openAdminModal(type, action, item = null) {
-                    this.adminModalType = type;
-                    this.adminModalAction = action;
-                    this.adminEditingId = item ? item.id : null;
-
-                    if (action === 'edit' && item) {
-                        this.adminForm = {
-                            title: item.title,
-                            ownerName: item.ownerName || 'เจ้าของโฮมสเตย์',
-                            province: item.province || this.selectedProvince,
-                            location: item.location,
-                            homestayId: item.homestayId || (this.homestays[0] ? this.homestays[0].id : 1),
-                            price: item.pricePerNight || item.pricePerPerson || 1000,
-                            totalCapacity: item.totalRooms || item.totalSeats || 5,
-                            availableCapacity: item.availableRooms || item.availableSeats || 5,
-                            image: item.image,
-                            description: item.description
-                        };
-                    } else {
-                        this.adminForm = {
-                            title: '',
-                            ownerName: this.currentHostHomestay ? this.currentHostHomestay.ownerName : 'เจ้าของใหม่',
-                            province: this.currentRole === 'host' ? this.currentHostHomestay.province : this.selectedProvince,
-                            location: '',
-                            homestayId: this.currentRole === 'host' ? this.currentHostHomestay.id : (this.homestays[0] ? this.homestays[0].id : 1),
-                            price: 1000,
-                            totalCapacity: 5,
-                            availableCapacity: 5,
-                            image: 'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800',
-                            description: ''
-                        };
-                    }
-                    this.showAdminModal = true;
-                },
-
-                saveAdminItem() {
-                    if (this.adminModalType === 'homestay') {
-                        if (this.adminModalAction === 'add') {
-                            const newHomestay = {
-                                id: Date.now(),
-                                ownerName: this.adminForm.ownerName,
-                                title: this.adminForm.title,
-                                province: this.adminForm.province,
-                                location: this.adminForm.location,
-                                description: this.adminForm.description,
-                                pricePerNight: Number(this.adminForm.price),
-                                rating: 5.0,
-                                reviewsCount: 1,
-                                totalRooms: Number(this.adminForm.totalCapacity),
-                                availableRooms: Number(this.adminForm.availableCapacity),
-                                tags: ['โฮมสเตย์ใหม่', 'รวมอาหารเช้า'],
-                                image: this.adminForm.image
-                            };
-                            this.homestays.push(newHomestay);
-                            if (this.currentRole === 'host') this.currentHostId = newHomestay.id;
-                        } else {
-                            const h = this.homestays.find(i => i.id === this.adminEditingId);
-                            if (h) {
-                                h.title = this.adminForm.title;
-                                h.ownerName = this.adminForm.ownerName;
-                                h.province = this.adminForm.province;
-                                h.location = this.adminForm.location;
-                                h.description = this.adminForm.description;
-                                h.pricePerNight = Number(this.adminForm.price);
-                                h.totalRooms = Number(this.adminForm.totalCapacity);
-                                h.availableRooms = Number(this.adminForm.availableCapacity);
-                                h.image = this.adminForm.image;
-                            }
-                        }
-                    } else if (this.adminModalType === 'activity') {
-                        if (this.adminModalAction === 'add') {
-                            const newAct = {
-                                id: Date.now(),
-                                homestayId: Number(this.adminForm.homestayId),
-                                title: this.adminForm.title,
-                                location: this.adminForm.location,
-                                description: this.adminForm.description,
-                                pricePerPerson: Number(this.adminForm.price),
-                                duration: '2 ชั่วโมง',
-                                totalSeats: Number(this.adminForm.totalCapacity),
-                                availableSeats: Number(this.adminForm.availableCapacity),
-                                image: this.adminForm.image
-                            };
-                            this.activities.push(newAct);
-                        } else {
-                            const a = this.activities.find(i => i.id === this.adminEditingId);
-                            if (a) {
-                                a.title = this.adminForm.title;
-                                a.homestayId = Number(this.adminForm.homestayId);
-                                a.location = this.adminForm.location;
-                                a.description = this.adminForm.description;
-                                a.pricePerPerson = Number(this.adminForm.price);
-                                a.totalSeats = Number(this.adminForm.totalCapacity);
-                                a.availableSeats = Number(this.adminForm.availableCapacity);
-                                a.image = this.adminForm.image;
-                            }
-                        }
-                    }
-                    this.showAdminModal = false;
-                },
-
-                deleteItem(type, id) {
-                    if (type === 'homestay') {
-                        this.homestays = this.homestays.filter(i => i.id !== id);
-                        this.activities = this.activities.filter(a => a.homestayId !== id);
-                        if (this.currentHostId === id && this.homestays.length > 0) {
-                            this.currentHostId = this.homestays[0].id;
-                        }
-                    } else {
-                        this.activities = this.activities.filter(i => i.id !== id);
-                    }
-                }
-            };
-        }
-    </script>
+    <!-- Toast Notification Message -->
+    <div x-show="toast.show" x-cloak class="fixed bottom-6 right-6 z-50 px-5 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl flex items-center space-x-2 transition-all">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span x-text="toast.message"></span>
+    </div>
 
 </body>
 </html>
